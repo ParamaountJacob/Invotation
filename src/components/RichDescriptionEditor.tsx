@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Image as ImageIcon, X, Move, ArrowUp, ArrowDown, Maximize2, Minimize2, AlertCircle, Type } from 'lucide-react';
+import { Image as ImageIcon, X, Move, ArrowUp, ArrowDown, Maximize2, Minimize2, AlertCircle, Type, Loader } from 'lucide-react';
 import { supabase } from '../lib/supabase'; // <-- CORRECTED FILE PATH
 
 // Block types to be exported and used by the parent
@@ -12,8 +12,11 @@ export interface TextBlock {
 export interface ImageBlock {
   id: string;
   type: 'image';
-  url: string;
+  url: string; 
   width: number; // percentage of container width
+  status?: 'pending' | 'uploaded' | 'error'; // Add status to track upload state
+  tempUrl?: string; // Temporary URL for preview while uploading
+  errorMessage?: string; // Error message if upload fails
 }
 
 export type ContentBlock = TextBlock | ImageBlock;
@@ -27,9 +30,11 @@ interface RichDescriptionEditorProps {
 
 // --- HELPER FUNCTION TO UPLOAD IMAGES ---
 const uploadImageToSupabase = async (file: File): Promise<string> => {
-  const fileExt = file.name.split('.').pop();
+  const fileExt = file.name.split('.').pop() || 'jpg';
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
   const bucketName = 'campaign-description-images'; // Make sure this bucket exists and has public access
+
+  console.log(`Uploading to ${bucketName}/${fileName}`);
 
   const { error: uploadError } = await supabase.storage
     .from(bucketName)
@@ -48,6 +53,7 @@ const uploadImageToSupabase = async (file: File): Promise<string> => {
     throw new Error('Could not get public URL for the uploaded image.');
   }
 
+  console.log(`Successfully uploaded to ${data.publicUrl}`);
   return data.publicUrl;
 };
 // -----------------------------------------
@@ -142,62 +148,109 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
+    
     setError(null);
-    setIsUploading(true);
-
-    let newBlocks = [...(blocks || [])];
-    let lastAddedBlockId: string | null = null;
+    
+    // Find insertion point
     const focusedIndex = focusedBlockId ? newBlocks.findIndex(b => b.id === focusedBlockId) : -1;
-
+    
+    // Process each file
     for (const file of Array.from(files)) {
       if (!file.type.startsWith('image/')) {
         setError('Please select image files only.');
         continue;
       }
+      
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
         setError(`Image "${file.name}" must be smaller than 5MB.`);
         continue;
       }
-
-      try {
-        const imageUrl = await uploadImageToSupabase(file);
-        const newImageBlock: ImageBlock = {
-          id: generateBlockId('img'),
-          type: 'image',
-          url: imageUrl,
-          width: 100
-        };
-        lastAddedBlockId = newImageBlock.id;
-
-        if (focusedIndex !== -1) {
-          newBlocks.splice(focusedIndex + 1, 0, newImageBlock);
-        } else {
-          newBlocks.push(newImageBlock);
-        }
-      } catch (uploadError: any) {
-        setError(uploadError.message);
-        console.error(uploadError);
+      
+      // Create temporary URL for preview
+      const tempUrl = URL.createObjectURL(file);
+      
+      // Create a new image block with pending status
+      const newImageBlock: ImageBlock = {
+        id: generateBlockId('img'),
+        type: 'image',
+        url: tempUrl, // Use temporary URL initially
+        width: 100,
+        status: 'pending',
+        tempUrl: tempUrl
+      };
+      
+      // Add the new block to the editor
+      let newBlocks = [...blocks];
+      if (focusedIndex !== -1) {
+        newBlocks.splice(focusedIndex + 1, 0, newImageBlock);
+      } else {
+        newBlocks.push(newImageBlock);
       }
+      onChange(newBlocks);
+      
+      // Start the upload process
+      setIsUploading(true);
+      uploadImageToSupabase(file)
+        .then(publicUrl => {
+          // Update the block with the permanent URL
+          const updatedBlocks = blocks.map(block => {
+            if (block.id === newImageBlock.id) {
+              return {
+                ...block,
+                url: publicUrl,
+                status: 'uploaded',
+                tempUrl: undefined // No longer needed
+              };
+            }
+            return block;
+          });
+          onChange(updatedBlocks);
+          
+          // Clean up the temporary URL
+          URL.revokeObjectURL(tempUrl);
+        })
+        .catch(error => {
+          console.error('Upload failed:', error);
+          // Update the block to show error state
+          const updatedBlocks = blocks.map(block => {
+            if (block.id === newImageBlock.id) {
+              return {
+                ...block,
+                status: 'error',
+                errorMessage: error.message
+              };
+            }
+            return block;
+          });
+          onChange(updatedBlocks);
+          setError(`Failed to upload image: ${error.message}`);
+        })
+        .finally(() => {
+          setIsUploading(false);
+        });
     }
-
-    onChange(newBlocks);
-    if (lastAddedBlockId) {
-      setActiveBlockId(lastAddedBlockId);
-    }
+    
     if (fileInputRef.current) fileInputRef.current.value = '';
-    setIsUploading(false);
   };
 
-
   const handleRemoveBlock = (id: string) => {
-    const blockToRemove = blocks.find(b => b.id === id);
-    if (blockToRemove?.type === 'image' && blockToRemove.url.startsWith('blob:')) {
-      URL.revokeObjectURL(blockToRemove.url);
+    // Find the block to remove
+    const blockIndex = blocks.findIndex(b => b.id === id);
+    if (blockIndex === -1) return;
+    
+    const blockToRemove = blocks[blockIndex];
+    
+    // Clean up any temporary URLs
+    if (blockToRemove.type === 'image') {
+      if (blockToRemove.tempUrl) {
+        URL.revokeObjectURL(blockToRemove.tempUrl);
+      }
+      if (blockToRemove.status === 'pending' && blockToRemove.url.startsWith('blob:')) {
+        URL.revokeObjectURL(blockToRemove.url);
+      }
     }
-    // Note: For a complete solution, you might want to delete the image from Supabase storage as well.
-    // This requires parsing the URL to get the file path and calling supabase.storage.from(...).remove(...).
-
+    
+    // Remove the block
     let newBlocks = blocks.filter(b => b.id !== id);
     if (newBlocks.length === 0) {
       const newId = generateBlockId('text');
@@ -275,7 +328,7 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
   };
 
   return (
-    <div
+    <div 
       ref={editorRef}
       className={`rich-description-editor border border-gray-300 rounded-lg overflow-hidden ${className} ${isResizing ? 'cursor-ew-resize' : ''}`}
       onMouseMove={(e) => { if (isResizing) handleResizeMove(e); }}
@@ -307,7 +360,30 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
             ) : ( // Image Block
               <div className="relative" style={{ width: `${block.width}%`, margin: '0 auto' }}>
                 <div className="relative">
-                  <img src={block.url} alt="Embedded content" className="w-full rounded-lg border border-gray-200" />
+                  {block.status === 'pending' ? (
+                    // Pending upload state
+                    <div className="relative">
+                      <img 
+                        src={block.url} 
+                        alt="Uploading..." 
+                        className="w-full rounded-lg border border-gray-200 opacity-70" 
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="bg-black/50 rounded-full p-3">
+                          <Loader className="w-6 h-6 text-white animate-spin" />
+                        </div>
+                      </div>
+                    </div>
+                  ) : block.status === 'error' ? (
+                    // Error state
+                    <div className="w-full rounded-lg border border-red-300 bg-red-50 p-4 flex items-center justify-center">
+                      <AlertCircle className="w-6 h-6 text-red-500 mr-2" />
+                      <span className="text-red-600 text-sm">{block.errorMessage || 'Failed to upload image'}</span>
+                    </div>
+                  ) : (
+                    // Successfully uploaded state
+                    <img src={block.url} alt="Embedded content" className="w-full rounded-lg border border-gray-200" />
+                  )}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
                     <div className="absolute top-2 right-2 flex space-x-1">
                       <button type="button" onClick={() => handleToggleFullWidth(block.id)} className="p-1 bg-black/60 rounded-full text-white hover:bg-black/80 transition-colors" title={block.width === 100 ? "Make half width" : "Make full width"}>{block.width === 100 ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button>
@@ -336,7 +412,15 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
       )}
 
       <div className="px-4 pb-4 flex space-x-2 border-t border-gray-200 pt-2">
-        <button type="button" onClick={handleAddImage} disabled={isUploading} className="flex items-center space-x-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"><ImageIcon size={16} /><span>{isUploading ? "Uploading..." : "Add Image"}</span></button>
+        <button 
+          type="button" 
+          onClick={handleAddImage} 
+          disabled={isUploading} 
+          className="flex items-center space-x-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isUploading ? <Loader size={16} className="animate-spin mr-1" /> : <ImageIcon size={16} />}
+          <span>{isUploading ? "Uploading..." : "Add Image"}</span>
+        </button>
         <button type="button" onClick={() => addTextBlockAfter(blocks?.length > 0 ? blocks[blocks.length - 1].id : null)} className="flex items-center space-x-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors text-sm"><Type size={16} /><span>Add Text Block</span></button>
         <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" disabled={isUploading} />
       </div>
