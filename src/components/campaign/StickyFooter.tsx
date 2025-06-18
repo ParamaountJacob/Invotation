@@ -29,15 +29,11 @@ const StickyFooter: React.FC<StickyFooterProps> = ({
           </div>
         </div>
         <button
-          onClick={() => {
-            if (user) {
-              handleSupport();
-            }
-          }}
+          onClick={handleSupport}
           disabled={!user || isSupporting}
           className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
         >
-          {!user ? 'Sign in' : 'Support this project'}
+          {!user ? 'Sign in' : isSupporting ? 'Supporting...' : '1 coin to support'}
         </button>
       </div>
     </div>

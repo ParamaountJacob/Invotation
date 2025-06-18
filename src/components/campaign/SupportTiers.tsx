@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { Trophy, Medal, Award, ArrowRight, AlertCircle, X, Check, Info } from 'lucide-react';
 
+interface TierInfo {
+  position: number;
+  discount: number;
+  supporter: any;
+  coinsRequired: number;
+  isUserPosition: boolean;
+}
+
 interface SupportTiersProps {
   campaign: any;
   supporters: any[];
@@ -27,8 +35,8 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [tierToConfirm, setTierToConfirm] = useState<{position: number, coins: number, discount: number} | null>(null);
   
-  // Create the base tier (position 5)
-  const baseTier = {
+  // Base tier (position 5) - everyone gets this with 1 coin
+  const baseTier: TierInfo = {
     position: 5,
     discount: 20,
     supporter: supporters.find(s => s.position === 5),
@@ -36,8 +44,8 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
     isUserPosition: userSupport?.position === 5
   };
   
-  // Create the special tiers (positions 1-4)
-  const specialTiers = Array.from({ length: 4 }, (_, i) => {
+  // Special tiers (positions 1-4) - higher positions with better discounts
+  const specialTiers: TierInfo[] = Array.from({ length: 4 }, (_, i) => {
     const position = i + 1; // Position (1, 2, 3, 4)
     const existingSupporter = supporters.find(s => s.position === position);
     
@@ -79,6 +87,8 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
   // Get background color based on position
   const getPositionColor = (position: number) => {
     switch (position) {
+      case 5: // Base tier
+        return 'bg-white border-gray-200';
       case 1:
         return 'bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-300';
       case 2:
@@ -93,6 +103,8 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
   // Get discount badge style based on position
   const getDiscountBadgeStyle = (position: number) => {
     switch (position) {
+      case 5: // Base tier
+        return 'bg-blue-500 text-white';
       case 1:
         return 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white';
       case 2:
@@ -129,7 +141,7 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
   
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 border-b border-gray-200 mb-4">
         <h3 className="text-xl font-bold text-gray-900 mb-4">Support Tiers</h3>
         <p className="text-gray-600 mb-4">
           Secure your position to get the best discount when this product launches. Higher positions get bigger discounts!
@@ -175,9 +187,75 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
       </div>
       
       {/* Support Tiers List - Kickstarter Style */}
-      <div className="space-y-6 p-6">
+      <div className="space-y-8 p-6">
         {/* Base tier first, then special tiers */}
-        {allTiers.map((tier) => (
+        {/* Base Tier - Special Styling */}
+        <div 
+          key={baseTier.position}
+          className={`${baseTier.isUserPosition ? 'border-green-500 ring-1 ring-green-500' : ''} rounded-xl transition-all duration-300 overflow-hidden`}
+        >
+          <div className="flex items-center space-x-3 mb-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <div className="w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center text-sm font-bold text-blue-700">
+                {baseTier.position}
+              </div>
+            </div>
+            <div>
+              <h4 className="font-bold text-gray-900">Base Support Tier</h4>
+              <div className="bg-blue-500 px-3 py-0.5 rounded-full text-xs font-bold inline-block text-white">
+                20% OFF
+              </div>
+            </div>
+          </div>
+          
+          <div className="mb-4">
+            <div className="flex items-center space-x-2 text-green-600 font-medium">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <p>Everyone gets this tier with 1 coin</p>
+            </div>
+          </div>
+          
+          <div className="space-y-3 mb-4">
+            <div className="flex items-start space-x-2">
+              <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <p className="text-gray-700">
+                20% discount on final retail price (${campaign.estimatedRetailPrice})
+              </p>
+            </div>
+            <div className="flex items-start space-x-2">
+              <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <p className="text-gray-700">
+                Early access when the product launches
+              </p>
+            </div>
+            <div className="flex items-start space-x-2">
+              <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <p className="text-gray-700">
+                Your name in the supporter credits
+              </p>
+            </div>
+          </div>
+          
+          {user && !userSupport && (
+            <button
+              onClick={() => handleTierSelect(baseTier.position, 1, baseTier.discount)}
+              disabled={isSupporting || coins < 1}
+              className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              <img
+                src="https://res.cloudinary.com/digjsdron/image/upload/v1749679800/Coin_fro3cf.webp"
+                alt="Coin"
+                className="w-5 h-5"
+                loading="lazy"
+              />
+              <span>1 coin to support</span>
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </button>
+          )}
+        </div>
+        
+        {/* Special Tiers */}
+        {specialTiers.map((tier) => (
           <div 
             key={tier.position}
             className={`${getPositionColor(tier.position)} ${
@@ -191,7 +269,7 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
                   {getPositionIcon(tier.position)}
                   <div>
                     <h4 className="font-bold text-gray-900">
-                      {tier.position === 5 ? 'Base Support Tier' : `Position #${tier.position}`}
+                      Position #{tier.position}
                     </h4>
                     <div className={`${getDiscountBadgeStyle(tier.position)} px-3 py-0.5 rounded-full text-xs font-bold inline-block mt-1`}>
                       {tier.discount}% OFF
@@ -256,50 +334,28 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
               </div>
               
               <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                <div className="flex items-center space-x-2">
-                  <img
-                    src="https://res.cloudinary.com/digjsdron/image/upload/v1749679800/Coin_fro3cf.webp"
-                    alt="Coin"
-                    className="w-6 h-6"
-                    loading="lazy"
-                  />
-                  <span className="font-bold text-gray-900">
-                    {tier.position === 5 
-                      ? '1 coin minimum' 
-                      : tier.supporter 
-                        ? `${tier.coinsRequired} coins to take this spot` 
-                        : '1 coin to secure'}
-                  </span>
-                </div>
-                
                 {user && !tier.isUserPosition && tier.position !== 5 && (
                   canAffordTier(tier.coinsRequired) ? (
                     <button
-                      onClick={() => handleTierSelect(tier.position, tier.coinsRequired, tier.discount)}
+                      onClick={() => handleTierSelect(tier.position, tier.coinsRequired, tier.discount)} 
                       disabled={isSupporting}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-1 shadow-sm"
+                      className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                     >
-                      <span>Secure Position</span>
+                      <img
+                        src="https://res.cloudinary.com/digjsdron/image/upload/v1749679800/Coin_fro3cf.webp"
+                        alt="Coin"
+                        className="w-5 h-5"
+                        loading="lazy"
+                      />
+                      <span>{tier.supporter ? `${tier.coinsRequired} coins to take this spot` : '1 coin to secure'}</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   ) : (
-                    <div className="text-sm text-red-600 flex items-center space-x-1">
+                    <div className="w-full text-sm text-red-600 flex items-center justify-center space-x-1 py-3">
                       <AlertCircle className="w-4 h-4" />
                       <span>Need {tier.coinsRequired - coins} more coins</span>
                     </div>
                   )
-                )}
-                
-                {/* For base tier, show different button */}
-                {user && !userSupport && tier.position === 5 && (
-                  <button
-                    onClick={() => handleTierSelect(tier.position, 1, tier.discount)}
-                    disabled={isSupporting || coins < 1}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-1 shadow-sm"
-                  >
-                    <span>Support Project</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
                 )}
               </div>
             </div>

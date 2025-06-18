@@ -50,6 +50,7 @@ const CampaignDetail = () => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [showAllOrNothingModal, setShowAllOrNothingModal] = useState(false);
+  const [showCoinSpendingVideo, setShowCoinSpendingVideo] = useState(false);
   const [daysLeft, setDaysLeft] = useState(0);
 
   const parseDescriptionStringToBlocks = useCallback((description: string): ContentBlock[] => {
@@ -143,7 +144,46 @@ const CampaignDetail = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   
-  const handleSupport = async () => { /* ... Functionality restored ... */ };
+  const handleSupport = async () => {
+    if (!user) {
+      // Redirect to login or show login modal
+      return;
+    }
+
+    if (isSupporting || coins < supportAmount) {
+      return;
+    }
+
+    try {
+      setIsSupporting(true);
+      setError(null);
+
+      // Deduct coins from user's account
+      const success = await deductCoins(supportAmount);
+      if (!success) {
+        throw new Error('Failed to deduct coins from your account');
+      }
+
+      // Support the campaign
+      const supported = await supportCampaign(parseInt(id!), supportAmount);
+      if (!supported) {
+        throw new Error('Failed to support campaign');
+      }
+
+      // Show coin spending celebration video
+      setShowCoinSpendingVideo(true);
+
+      // Refresh campaign data
+      await fetchCampaignData();
+      await refreshCoins();
+
+    } catch (err: any) {
+      console.error('Error supporting campaign:', err);
+      setError(err.message);
+    } finally {
+      setIsSupporting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -187,7 +227,7 @@ const CampaignDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
             <CampaignContent 
-              descriptionBlocks={descriptionBlocks}
+              descriptionBlocks={descriptionBlocks} 
               campaign={campaign}
               comments={comments}
               fetchCampaignData={fetchCampaignData}
@@ -196,7 +236,7 @@ const CampaignDetail = () => {
             />
           </div>
           <div className="space-y-6">
-            <div className="lg:sticky lg:top-8">
+            <div className="lg:sticky lg:top-24">
               <SupportTiers
                 campaign={campaign}
                 supporters={supporters}
@@ -224,6 +264,42 @@ const CampaignDetail = () => {
       {showAllOrNothingModal && <AllOrNothingModal isOpen={showAllOrNothingModal} onClose={() => setShowAllOrNothingModal(false)} />}
       {showImageModal && <MediaModal isOpen={showImageModal} type="image" src={campaign.image} title={campaign.title} onClose={() => setShowImageModal(false)} />}
       {showVideoModal && campaign.videoUrl && <MediaModal isOpen={showVideoModal} type="video" src={campaign.videoUrl} title={campaign.title} onClose={() => setShowVideoModal(false)} />}
+      
+      {/* Coin Spending Celebration Video */}
+      {showCoinSpendingVideo && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] animate-fade-in">
+          <div className="relative bg-black rounded-2xl overflow-hidden shadow-2xl max-w-md w-full mx-4">
+            <video
+              autoPlay
+              muted
+              className="w-full h-auto rounded-2xl animate-fade-in"
+              onEnded={() => {
+                setShowCoinSpendingVideo(false);
+              }}
+            >
+              <source src="https://res.cloudinary.com/digjsdron/video/upload/v1749612635/Coin_Spending_g8wd9v.mp4" type="video/mp4" />
+            </video>
+            
+            <button
+              onClick={() => {
+                setShowCoinSpendingVideo(false);
+              }}
+              className="absolute top-4 right-4 w-10 h-10 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-all duration-300 text-xl font-bold"
+            >
+              ×
+            </button>
+            
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-6">
+              <div className="text-center text-white">
+                <h3 className="text-xl font-bold mb-2 animate-fade-in">Support Successful! 🎉</h3>
+                <p className="text-sm opacity-90 animate-fade-in">
+                  {supportAmount} coin{supportAmount > 1 ? 's' : ''} spent • You've helped bring this project to life!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
