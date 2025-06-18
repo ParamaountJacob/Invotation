@@ -14,8 +14,8 @@ const AllOrNothingModal: React.FC<AllOrNothingModalProps> = ({ isOpen, onClose }
       <div className="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 shadow-2xl">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold flex items-center">
-            <Info className="w-6 h-6 text-blue-500 mr-2" />
-            All-or-Nothing Funding Explained
+            <Info className="w-6 h-6 text-primary mr-2" />
+            Invotation Development Process
           </h2>
           <button
             onClick={onClose}
@@ -27,17 +27,19 @@ const AllOrNothingModal: React.FC<AllOrNothingModalProps> = ({ isOpen, onClose }
         
         <div className="space-y-6">
           <p className="text-lg text-gray-700 mb-6">
-            Invotation uses an all-or-nothing funding model to ensure that creators get the resources they need to bring their ideas to life, while protecting supporters from unsuccessful projects.
+            Invotation takes ideas from concept to reality through a structured development process. Your support helps validate market interest and fund initial development.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200 shadow-sm">
               <div className="flex items-start space-x-3 mb-4">
-                <RefreshCcw className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
+                <div className="bg-primary/10 rounded-full p-1 flex-shrink-0">
+                  <span className="text-primary font-bold">1</span>
+                </div>
                 <div>
-                  <h3 className="font-bold text-blue-900 mb-1">Refund Guarantee</h3>
+                  <h3 className="font-bold text-blue-900 mb-1">Idea Validation</h3>
                   <p className="text-blue-700">
-                    If the project doesn't reach its coin goal by the deadline, all your coins will be automatically refunded to your account.
+                    Your support helps us validate market interest. If the project doesn't reach its goal, your coins will be refunded.
                   </p>
                 </div>
               </div>
@@ -45,13 +47,29 @@ const AllOrNothingModal: React.FC<AllOrNothingModalProps> = ({ isOpen, onClose }
             
             <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200 shadow-sm">
               <div className="flex items-start space-x-3 mb-4">
-                <CheckCircle className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
+                <div className="bg-green-100 rounded-full p-1 flex-shrink-0">
+                  <span className="text-green-600 font-bold">2</span>
+                </div>
                 <div>
-                  <h3 className="font-bold text-green-900 mb-1">Successful Projects</h3>
+                  <h3 className="font-bold text-green-900 mb-1">Prototype Development</h3>
                   <p className="text-green-700">
-                    When a project reaches its goal, Invotation brings your idea to reality by handling design, manufacturing, and distribution.
+                    Once funded, we create physical prototypes and refine the design based on community feedback.
                   </p>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200 shadow-sm mb-6">
+            <div className="flex items-start space-x-3">
+              <div className="bg-purple-100 rounded-full p-1 flex-shrink-0">
+                <span className="text-purple-600 font-bold">3</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-purple-900 mb-1">Crowdfunding Launch</h3>
+                <p className="text-purple-700">
+                  The refined product launches on Kickstarter, where you'll receive your promised discount based on your support position.
+                </p>
               </div>
             </div>
           </div>
@@ -64,11 +82,11 @@ const AllOrNothingModal: React.FC<AllOrNothingModalProps> = ({ isOpen, onClose }
                 <ul className="space-y-2 text-amber-800">
                   <li className="flex items-start">
                     <span className="w-2 h-2 bg-amber-500 rounded-full mt-2 mr-2 flex-shrink-0" />
-                    <p>Project launch is not guaranteed even if funding is successful. Various factors like technical challenges or market conditions may affect the final outcome.</p>
+                    <p>Our estimated retail price is based on current projections. The final cost may vary based on manufacturing requirements and market conditions.</p>
                   </li>
                   <li className="flex items-start">
                     <span className="w-2 h-2 bg-amber-500 rounded-full mt-2 mr-2 flex-shrink-0" />
-                    <p>The timeline from funding to product delivery can vary significantly based on complexity.</p>
+                    <p>The timeline from prototype to final product can vary significantly based on complexity and manufacturing challenges.</p>
                   </li>
                   <li className="flex items-start">
                     <span className="w-2 h-2 bg-amber-500 rounded-full mt-2 mr-2 flex-shrink-0" />
@@ -81,23 +99,23 @@ const AllOrNothingModal: React.FC<AllOrNothingModalProps> = ({ isOpen, onClose }
           
           <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200 shadow-sm">
             <div className="flex items-start space-x-3">
-              <Shield className="w-6 h-6 text-purple-600 mt-1 flex-shrink-0" />
+              <Shield className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
               <div>
-                <h3 className="font-bold text-purple-900 mb-2">Invotation's Quality Assurance</h3>
-                <p className="text-purple-700 mb-4">
+                <h3 className="font-bold text-gray-900 mb-2">Invotation's Quality Assurance</h3>
+                <p className="text-gray-700 mb-4">
                   Unlike other platforms, Invotation carefully vets all projects before they appear on our platform. Our team of experts evaluates each submission for:
                 </p>
-                <ul className="space-y-2 text-purple-700">
+                <ul className="space-y-2 text-gray-700">
                   <li className="flex items-start">
-                    <span className="w-2 h-2 bg-purple-500 rounded-full mt-2 mr-2 flex-shrink-0" />
+                    <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-2 flex-shrink-0" />
                     <p>Technical feasibility and manufacturing viability</p>
                   </li>
                   <li className="flex items-start">
-                    <span className="w-2 h-2 bg-purple-500 rounded-full mt-2 mr-2 flex-shrink-0" />
+                    <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-2 flex-shrink-0" />
                     <p>Market potential and consumer demand</p>
                   </li>
                   <li className="flex items-start">
-                    <span className="w-2 h-2 bg-purple-500 rounded-full mt-2 mr-2 flex-shrink-0" />
+                    <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-2 flex-shrink-0" />
                     <p>Uniqueness and innovation value</p>
                   </li>
                 </ul>
