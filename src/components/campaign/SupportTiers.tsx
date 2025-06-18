@@ -27,19 +27,27 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [tierToConfirm, setTierToConfirm] = useState<{position: number, coins: number, discount: number} | null>(null);
   
-  // Get the top 9 supporter positions (or fewer if there aren't 9 yet)
-  // Starting with position #1 (highest tier) and going down to #9 (lowest tier)
-  const topTiers = Array.from({ length: 4 }, (_, i) => {
-    const position = i + 1; // Position (1, 2, 3, ..., 9)
+  // Create the base tier (position 5)
+  const baseTier = {
+    position: 5,
+    discount: 20,
+    supporter: supporters.find(s => s.position === 5),
+    coinsRequired: 1, // Always 1 coin for base tier
+    isUserPosition: userSupport?.position === 5
+  };
+  
+  // Create the special tiers (positions 1-4)
+  const specialTiers = Array.from({ length: 4 }, (_, i) => {
+    const position = i + 1; // Position (1, 2, 3, 4)
     const existingSupporter = supporters.find(s => s.position === position);
     
     // Calculate discount based on position
-    let discount = 20; // Default discount
+    let discount;
     if (position === 1) discount = 40;
     else if (position === 2) discount = 35;
     else if (position === 3) discount = 30;
     else if (position === 4) discount = 27;
-    
+
     return {
       position,
       discount,
@@ -48,6 +56,9 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
       isUserPosition: userSupport?.position === position
     };
   });
+
+  // Combine tiers with base tier first, then special tiers in descending order
+  const allTiers = [baseTier, ...specialTiers.reverse()];
   
   // Get position icon based on position number
   const getPositionIcon = (position: number) => {
@@ -165,8 +176,8 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
       
       {/* Support Tiers List - Kickstarter Style */}
       <div className="space-y-6 p-6">
-        {/* Position #1 - Top Tier */}
-        {topTiers.map((tier) => (
+        {/* Base tier first, then special tiers */}
+        {allTiers.map((tier) => (
           <div 
             key={tier.position}
             className={`${getPositionColor(tier.position)} ${
@@ -179,7 +190,9 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
                 <div className="flex items-center space-x-3">
                   {getPositionIcon(tier.position)}
                   <div>
-                    <h4 className="font-bold text-gray-900">Position #{tier.position}</h4>
+                    <h4 className="font-bold text-gray-900">
+                      {tier.position === 5 ? 'Base Support Tier' : `Position #${tier.position}`}
+                    </h4>
                     <div className={`${getDiscountBadgeStyle(tier.position)} px-3 py-0.5 rounded-full text-xs font-bold inline-block mt-1`}>
                       {tier.discount}% OFF
                     </div>
@@ -199,7 +212,7 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
               <div className="mb-4">
                 {tier.supporter ? (
                   <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 font-bold">
+                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-700 font-bold flex-shrink-0">
                       {tier.supporter.profiles?.full_name?.charAt(0) || 'A'}
                     </div>
                     <div>
@@ -214,7 +227,9 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
                 ) : (
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <p className="text-green-600 font-medium">Available! No supporter yet</p>
+                    <p className="text-green-600 font-medium">
+                      {tier.position === 5 ? 'Everyone gets this tier with 1 coin' : 'Available! No supporter yet'}
+                    </p>
                   </div>
                 )}
               </div>
@@ -249,11 +264,15 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
                     loading="lazy"
                   />
                   <span className="font-bold text-gray-900">
-                    {tier.supporter ? `${tier.coinsRequired} coins to take this spot` : '1 coin to secure'}
+                    {tier.position === 5 
+                      ? '1 coin minimum' 
+                      : tier.supporter 
+                        ? `${tier.coinsRequired} coins to take this spot` 
+                        : '1 coin to secure'}
                   </span>
                 </div>
                 
-                {user && !tier.isUserPosition && (
+                {user && !tier.isUserPosition && tier.position !== 5 && (
                   canAffordTier(tier.coinsRequired) ? (
                     <button
                       onClick={() => handleTierSelect(tier.position, tier.coinsRequired, tier.discount)}
@@ -269,6 +288,18 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
                       <span>Need {tier.coinsRequired - coins} more coins</span>
                     </div>
                   )
+                )}
+                
+                {/* For base tier, show different button */}
+                {user && !userSupport && tier.position === 5 && (
+                  <button
+                    onClick={() => handleTierSelect(tier.position, 1, tier.discount)}
+                    disabled={isSupporting || coins < 1}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-1 shadow-sm"
+                  >
+                    <span>Support Project</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
                 )}
               </div>
             </div>

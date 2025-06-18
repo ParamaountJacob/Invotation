@@ -186,7 +186,7 @@ const CampaignHeader: React.FC<CampaignHeaderProps> = ({
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                       <div className="flex items-center space-x-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                        <span className="text-green-800 font-medium">You've backed this project with {userSupport.coins_spent} coins</span>
+                        <span className="text-green-800 font-medium">You've supported this project with {userSupport.coins_spent} coins</span>
                       </div>
                     </div>
                   )}
@@ -195,13 +195,13 @@ const CampaignHeader: React.FC<CampaignHeaderProps> = ({
                     <div className="flex space-x-2 items-center mb-4">
                       <input type="number" min="1" max={coins} value={supportAmount} onChange={(e) => setSupportAmount(parseInt(e.target.value) || 1)} className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" />
                       <button onClick={handleSupport} disabled={isSupporting || coins < supportAmount} className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-grow">
-                        {isSupporting ? 'Processing...' : 'Back this project'}
+                        {isSupporting ? 'Processing...' : 'Support this project'}
                       </button>
                     </div>
                   )}
 
                   {!user && (
-                    <button className="w-full px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors mb-4">Sign In to Back</button>
+                    <button className="w-full px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors mb-4">Sign In to Support</button>
                   )}
 
                   <div className="flex space-x-3">
