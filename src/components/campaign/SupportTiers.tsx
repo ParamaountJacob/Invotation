@@ -29,7 +29,7 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
   
   // Get the top 9 supporter positions (or fewer if there aren't 9 yet)
   // Starting with position #1 (highest tier) and going down to #9 (lowest tier)
-  const topTiers = Array.from({ length: 9 }, (_, i) => {
+  const topTiers = Array.from({ length: 4 }, (_, i) => {
     const position = i + 1; // Position (1, 2, 3, ..., 9)
     const existingSupporter = supporters.find(s => s.position === position);
     
@@ -39,10 +39,6 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
     else if (position === 2) discount = 35;
     else if (position === 3) discount = 30;
     else if (position === 4) discount = 27;
-    else if (position === 5) discount = 25;
-    else if (position === 6) discount = 23;
-    else if (position === 7) discount = 22;
-    else if (position === 8) discount = 21;
     
     return {
       position,

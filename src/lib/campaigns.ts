@@ -330,10 +330,7 @@ export async function recalculateCampaignData(campaignId: number): Promise<void>
         else if (position === 2) discount = 35;
         else if (position === 3) discount = 30;
         else if (position === 4) discount = 27;
-        else if (position === 5) discount = 25;
-        else if (position === 6) discount = 23;
-        else if (position === 7) discount = 22;
-        else if (position === 8) discount = 21;
+        else discount = 20; // Base tier for position 5 and beyond
 
         // Update supporter
         const { error } = await supabase
