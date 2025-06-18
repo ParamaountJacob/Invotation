@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Image as ImageIcon, X, Move, ArrowUp, ArrowDown, Maximize2, Minimize2, AlertCircle, Type, Loader, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-// --- INTERFACE HAS BEEN UPDATED ---
+// --- INTERFACES ---
 export interface TextBlock {
   id: string;
   type: 'text';
@@ -20,7 +20,7 @@ export interface ImageBlock {
 
 export type ContentBlock = TextBlock | ImageBlock;
 
-// --- PROPS HAVE BEEN UPDATED ---
+// --- PROPS INTERFACE ---
 interface RichDescriptionEditorProps {
   blocks: ContentBlock[];
   onChange: (blocksOrUpdater: ContentBlock[] | ((prevBlocks: ContentBlock[]) => ContentBlock[])) => void;
@@ -28,7 +28,7 @@ interface RichDescriptionEditorProps {
   className?: string;
 }
 
-// --- HELPER FUNCTION TO UPLOAD IMAGES ---
+// --- HELPER FUNCTION ---
 const uploadImageToSupabase = async (file: File): Promise<string> => {
   const fileExt = file.name.split('.').pop() || 'jpg';
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
@@ -53,8 +53,8 @@ const uploadImageToSupabase = async (file: File): Promise<string> => {
 
   return data.publicUrl;
 };
-// -----------------------------------------
 
+// --- COMPONENT ---
 const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
   blocks,
   onChange,
@@ -74,7 +74,7 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
 
   const generateBlockId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
-  // --- THIS IS THE CORRECTED FUNCTION ---
+  // --- IMAGE UPLOAD HANDLER (CORRECTED) ---
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
@@ -83,7 +83,6 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
     const focusedIndex = blocks ? blocks.findIndex(b => b.id === focusedBlockId) : -1;
 
     const tempBlocks: ImageBlock[] = files.map(file => {
-      // Validation from your code
       if (!file.type.startsWith('image/')) {
         setError('Please select image files only.');
         return null;
@@ -95,28 +94,24 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
       return {
         id: generateBlockId('img'),
         type: 'image',
-        url: URL.createObjectURL(file), // Temporary preview URL
+        url: URL.createObjectURL(file),
         width: 100,
-        status: 'uploading' // Initial status
+        status: 'uploading'
       };
     }).filter((b): b is ImageBlock => b !== null);
 
     if (tempBlocks.length === 0) return;
 
-    // Use a functional update to add all temporary blocks at once.
-    // This prevents race conditions.
     onChange(currentBlocks => {
       const newBlocks = [...(currentBlocks || [])];
       newBlocks.splice(focusedIndex + 1, 0, ...tempBlocks);
       return newBlocks;
     });
 
-    // Upload each file and update its specific block when done.
     tempBlocks.forEach((tempBlock, index) => {
       const file = files[index];
       uploadImageToSupabase(file)
         .then(finalUrl => {
-          // On success, find the block by its ID and update its URL and status.
           onChange(latestBlocks =>
             latestBlocks.map(b =>
               b.id === tempBlock.id
@@ -124,10 +119,9 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
                 : b
             )
           );
-          URL.revokeObjectURL(tempBlock.url); // Clean up temporary URL
+          URL.revokeObjectURL(tempBlock.url);
         })
         .catch(uploadError => {
-          // On failure, find the block and update its status to 'error'.
           console.error("Upload failed:", uploadError);
           setError(uploadError.message || 'An image failed to upload.');
           onChange(latestBlocks =>
@@ -152,41 +146,86 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
     onChange(newBlocks as ContentBlock[]);
   };
 
-  // --- No changes to other functions ---
+  const handleAddImage = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const handleRemoveBlock = (id: string) => {
+    const blockToRemove = blocks.find(b => b.id === id);
+    if (blockToRemove?.type === 'image' && blockToRemove.url.startsWith('blob:')) {
+      URL.revokeObjectURL(blockToRemove.url);
+    }
+    
+    let newBlocks = blocks.filter(b => b.id !== id);
+    if (newBlocks.length === 0) {
+      const newId = generateBlockId('text');
+      newBlocks.push({ id: newId, type: 'text', content: '' });
+      setActiveBlockId(newId);
+    }
+    onChange(newBlocks);
+  };
+  
+  const handleToggleFullWidth = (id: string) => {
+    onChange(currentBlocks => currentBlocks.map(block => {
+      if (block.id === id && block.type === 'image') {
+        return { ...block, width: block.width === 100 ? 50 : 100 };
+      }
+      return block;
+    }) as ContentBlock[]);
+  };
+
+  const addTextBlockAfter = (blockId: string | null) => {
+    const newBlockId = generateBlockId('text');
+    onChange(currentBlocks => {
+        const safeBlocks = currentBlocks || [];
+        const index = blockId ? safeBlocks.findIndex(b => b.id === blockId) : safeBlocks.length - 1;
+        const newBlocks = [...safeBlocks];
+        newBlocks.splice(index + 1, 0, { id: newBlockId, type: 'text', content: '' });
+        setActiveBlockId(newBlockId);
+        setSelectionStart(0);
+        return newBlocks;
+    });
+  };
 
   return (
-    // Your JSX code for rendering goes here.
-    // The key is to check `block.status` in your image block rendering logic
-    // to show a loader or an error message. I've added a simple implementation below.
      <div
       ref={editorRef}
-      className={`rich-description-editor border border-gray-300 rounded-lg overflow-hidden ${className} ${isResizing ? 'cursor-ew-resize' : ''}`}
+      className={`rich-description-editor border border-gray-300 rounded-lg overflow-hidden ${className}`}
     >
       <div className="space-y-4 p-4">
-        {(blocks || []).map((block, index) => (
+        {(blocks || []).map((block) => (
           <div key={block.id} className="relative group">
             {block.type === 'text' ? (
-              // ... your text block rendering
+              <textarea
+                value={(block as TextBlock).content}
+                onChange={(e) => handleTextChange(e, block.id)}
+                placeholder={placeholder}
+                className="w-full p-2 border border-transparent focus:border-gray-300 rounded-md focus:ring-0 focus:outline-none resize-none transition-all"
+                rows={Math.max(2, Math.min(10, (block as TextBlock).content.split('\n').length))}
+              />
             ) : ( // Image Block
-              <div className="relative" style={{ width: `${block.width}%`, margin: '0 auto' }}>
+              <div className="relative" style={{ width: `${(block as ImageBlock).width}%`, margin: '0 auto' }}>
                 <div className="relative">
-                  <img src={block.url} alt="Embedded content" className={`w-full rounded-lg border border-gray-200 ${block.status === 'uploading' || block.status === 'error' ? 'opacity-50' : ''}`} />
-                  {/* Overlay for loading/error status */}
-                  {block.status === 'uploading' && (
+                  <img src={(block as ImageBlock).url} alt="Embedded content" className={`w-full rounded-lg border border-gray-200 ${(block as ImageBlock).status === 'uploading' || (block as ImageBlock).status === 'error' ? 'opacity-50' : ''}`} />
+                  
+                  {(block as ImageBlock).status === 'uploading' && (
                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white rounded-lg">
                          <Loader className="animate-spin w-8 h-8" />
                      </div>
                   )}
-                  {block.status === 'error' && (
+                  {(block as ImageBlock).status === 'error' && (
                      <div className="absolute inset-0 bg-red-900/70 flex flex-col items-center justify-center text-white p-2 rounded-lg">
                          <AlertTriangle className="w-8 h-8 mb-1" />
-                         <span className="text-xs text-center">{block.errorMessage || 'Upload Failed'}</span>
+                         <span className="text-xs text-center">{(block as ImageBlock).errorMessage || 'Upload Failed'}</span>
                      </div>
                   )}
-                  {/* Your existing overlay for controls */}
-                   {block.status === 'uploaded' && (
+                   {(block as ImageBlock).status === 'uploaded' && (
                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                          {/* ... your edit/move/delete buttons ... */}
+                          <div className="absolute top-2 right-2 flex space-x-1">
+                              <button type="button" onClick={() => handleToggleFullWidth(block.id)} className="p-1 bg-black/60 rounded-full text-white hover:bg-black/80 transition-colors" title={(block as ImageBlock).width === 100 ? "Make half width" : "Make full width"}>{(block as ImageBlock).width === 100 ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button>
+                              <button type="button" onClick={() => handleRemoveBlock(block.id)} className="p-1 bg-black/60 rounded-full text-white hover:bg-red-600 transition-colors" title="Remove image"><X size={16} /></button>
+                          </div>
+                          <button type="button" onClick={() => addTextBlockAfter(block.id)} className="p-2 bg-black/60 rounded-full text-white hover:bg-black/80 transition-colors" title="Add text after image"><Type size={16} /></button>
                        </div>
                    )}
                 </div>
@@ -195,7 +234,24 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
           </div>
         ))}
       </div>
-      {/* ... rest of your component */}
+      
+      {error && (
+        <div className="px-4 py-2 bg-red-50 border-t border-red-200 flex items-center text-red-700 text-sm">
+          <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" /> <p>{error}</p>
+        </div>
+      )}
+
+      <div className="px-4 pb-4 flex space-x-2 border-t border-gray-200 pt-2">
+        <button
+          type="button"
+          onClick={handleAddImage}
+          className="flex items-center space-x-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors text-sm"
+        >
+          <ImageIcon size={16} /><span>Add Image</span>
+        </button>
+        <button type="button" onClick={() => addTextBlockAfter(blocks?.length > 0 ? blocks[blocks.length - 1].id : null)} className="flex items-center space-x-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors text-sm"><Type size={16} /><span>Add Text Block</span></button>
+        <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+      </div>
     </div>
   );
 };
