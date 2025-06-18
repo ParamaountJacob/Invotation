@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<browserconfig>
+    <msapplication>
+        <tile>
+            <square150x150logo src="https://cdn.shopify.com/s/files/1/0749/7403/6183/files/Short_Logo_FAV.webp?v=1746324234"/>
+            <TileColor>#3366FF</TileColor>
+        </tile>
+    </msapplication>
+</browserconfig>

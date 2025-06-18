@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+  
+  <!-- Homepage -->
+  <url>
+    <loc>https://invotation.com/</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://cdn.shopify.com/s/files/1/0749/7403/6183/files/Invotation_Logo_Design_copy.webp?v=1746324151</image:loc>
+      <image:title>Invotation - Innovation Platform</image:title>
+      <image:caption>Turn your ideas into reality through community voting and expert development</image:caption>
+    </image:image>
+  </url>
+
+  <!-- Main Navigation Pages -->
+  <url>
+    <loc>https://invotation.com/projects</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://invotation.com/live-campaigns</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://invotation.com/completed-projects</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://invotation.com/archives</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Information Pages -->
+  <url>
+    <loc>https://invotation.com/how-it-works</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://invotation.com/submit</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://invotation.com/submission-tips</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://invotation.com/submissions</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Legal Pages -->
+  <url>
+    <loc>https://invotation.com/privacy-policy</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://invotation.com/terms-of-service</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://invotation.com/cookie-policy</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Utility Pages -->
+  <url>
+    <loc>https://invotation.com/sitemap</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+  <!-- Individual Campaign Pages (examples) -->
+  <url>
+    <loc>https://invotation.com/campaign/1</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://cdn.shopify.com/s/files/1/0817/7595/2154/files/KnockBoxed.webp?v=1746395553</image:loc>
+      <image:title>KnockBoxed - Hygienic Coffee Knockbox</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://invotation.com/campaign/2</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://cdn.shopify.com/s/files/1/0817/7595/2154/files/Shower_Jeane.webp?v=1732770175</image:loc>
+      <image:title>ShowerFusion - Dual-Head Shower System</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://invotation.com/campaign/3</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://cdn.shopify.com/s/files/1/0817/7595/2154/files/Fictitious_gold.webp?v=1746395792</image:loc>
+      <image:title>Fictitious Gold - Premium Tungsten Bars</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://invotation.com/campaign/4</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://cdn.shopify.com/s/files/1/0817/7595/2154/files/ShowerKapp.webp?v=1746396947</image:loc>
+      <image:title>ShowerKapp - Customizable Shower Head Attachments</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://invotation.com/campaign/5</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://cdn.shopify.com/s/files/1/0817/7595/2154/files/StrudiGuns.webp?v=1746401609</image:loc>
+      <image:title>SturdiGuns - Handcrafted Wooden Toy Weapons</image:title>
+    </image:image>
+  </url>
+
+  <url>
+    <loc>https://invotation.com/campaign/6</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://cdn.shopify.com/s/files/1/0817/7595/2154/files/Packnsnap.webp?v=1746399889</image:loc>
+      <image:title>Packnsnap - Smart Remote Travel Cover</image:title>
+    </image:image>
+  </url>
+
+  <!-- Completed Project Pages -->
+  <url>
+    <loc>https://invotation.com/completed-project/1001</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://invotation.com/completed-project/1002</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+</urlset>
