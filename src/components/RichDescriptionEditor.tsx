@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Image as ImageIcon, X, Move, ArrowUp, ArrowDown, Maximize2, Minimize2, AlertCircle, Type } from 'lucide-react';
-import { supabase } from '../../lib/supabase'; // <-- Make sure this path is correct
+import { supabase } from '../lib/supabase'; // <-- CORRECTED FILE PATH
 
 // Block types to be exported and used by the parent
 export interface TextBlock {
