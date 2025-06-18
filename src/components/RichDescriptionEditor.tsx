@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Image as ImageIcon, X, Move, ArrowUp, ArrowDown, Maximize2, Minimize2, AlertCircle, Type } from 'lucide-react';
+import { supabase } from '../../lib/supabase'; // <-- Make sure this path is correct
 
 // Block types to be exported and used by the parent
 export interface TextBlock {
@@ -17,13 +18,40 @@ export interface ImageBlock {
 
 export type ContentBlock = TextBlock | ImageBlock;
 
-// --- PROPS HAVE CHANGED ---
 interface RichDescriptionEditorProps {
-  blocks: ContentBlock[]; // Receives blocks directly
-  onChange: (blocks: ContentBlock[]) => void; // Emits blocks directly
+  blocks: ContentBlock[];
+  onChange: (blocks: ContentBlock[]) => void;
   placeholder?: string;
   className?: string;
 }
+
+// --- HELPER FUNCTION TO UPLOAD IMAGES ---
+const uploadImageToSupabase = async (file: File): Promise<string> => {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+  const bucketName = 'campaign-description-images'; // Make sure this bucket exists and has public access
+
+  const { error: uploadError } = await supabase.storage
+    .from(bucketName)
+    .upload(fileName, file);
+
+  if (uploadError) {
+    console.error('Error uploading image:', uploadError);
+    throw new Error('Image upload failed. ' + uploadError.message);
+  }
+
+  const { data } = supabase.storage
+    .from(bucketName)
+    .getPublicUrl(fileName);
+
+  if (!data.publicUrl) {
+    throw new Error('Could not get public URL for the uploaded image.');
+  }
+
+  return data.publicUrl;
+};
+// -----------------------------------------
+
 
 const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
   blocks,
@@ -38,9 +66,10 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
   const [resizeStartX, setResizeStartX] = useState(0);
   const [initialWidth, setInitialWidth] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
-  const textareaRefs = useRef<{[key: string]: HTMLTextAreaElement | null}>({});
+  const textareaRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
 
   const generateBlockId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -56,9 +85,9 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
   }, [activeBlockId, selectionStart]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>, blockId: string) => {
-    const newBlocks = blocks.map(block => 
-      block.id === blockId 
-        ? { ...block, content: e.target.value } 
+    const newBlocks = blocks.map(block =>
+      block.id === blockId
+        ? { ...block, content: e.target.value }
         : block
     );
     onChange(newBlocks as ContentBlock[]);
@@ -78,10 +107,10 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
     const textarea = e.target as HTMLTextAreaElement;
     setSelectionStart(textarea.selectionStart);
   };
-  
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>, blockId: string, blockIndex: number) => {
     const textarea = e.currentTarget;
-    
+
     if (e.key === 'Enter' && !e.shiftKey && textarea.selectionStart === textarea.value.length) {
       e.preventDefault();
       const newBlockId = generateBlockId('text');
@@ -91,18 +120,18 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
       setActiveBlockId(newBlockId);
       setSelectionStart(0);
     }
-    
+
     if (e.key === 'Backspace' && textarea.selectionStart === 0 && blockIndex > 0) {
       const prevBlock = blocks[blockIndex - 1];
       if (prevBlock.type === 'text') {
         e.preventDefault();
         const cursorPosition = prevBlock.content.length;
         const mergedContent = prevBlock.content + (blocks[blockIndex] as TextBlock).content;
-        
+
         const newBlocks = [...blocks];
         newBlocks[blockIndex - 1] = { ...prevBlock, content: mergedContent };
         newBlocks.splice(blockIndex, 1);
-        
+
         onChange(newBlocks);
         setActiveBlockId(prevBlock.id);
         setSelectionStart(cursorPosition);
@@ -110,61 +139,70 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    
-    setError(null);
-    let newBlocks = [...(blocks || [])]; // Defend against null/undefined
-    let lastAddedBlockId: string | null = null;
 
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        if (!file.type.startsWith('image/')) {
-            setError('Please select image files only');
-            continue;
-        }
-        if (file.size > 5 * 1024 * 1024) {
-            setError('Image must be smaller than 5MB');
-            continue;
-        }
-        
-        const imageUrl = URL.createObjectURL(file);
+    setError(null);
+    setIsUploading(true);
+
+    let newBlocks = [...(blocks || [])];
+    let lastAddedBlockId: string | null = null;
+    const focusedIndex = focusedBlockId ? newBlocks.findIndex(b => b.id === focusedBlockId) : -1;
+
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('image/')) {
+        setError('Please select image files only.');
+        continue;
+      }
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        setError(`Image "${file.name}" must be smaller than 5MB.`);
+        continue;
+      }
+
+      try {
+        const imageUrl = await uploadImageToSupabase(file);
         const newImageBlock: ImageBlock = {
-            id: generateBlockId('img'),
-            type: 'image',
-            url: imageUrl,
-            width: 100
+          id: generateBlockId('img'),
+          type: 'image',
+          url: imageUrl,
+          width: 100
         };
         lastAddedBlockId = newImageBlock.id;
 
-        const focusedIndex = focusedBlockId ? newBlocks.findIndex(b => b.id === focusedBlockId) : -1;
-        
         if (focusedIndex !== -1) {
-            newBlocks.splice(focusedIndex + 1, 0, newImageBlock);
+          newBlocks.splice(focusedIndex + 1, 0, newImageBlock);
         } else {
-            newBlocks.push(newImageBlock);
+          newBlocks.push(newImageBlock);
         }
+      } catch (uploadError: any) {
+        setError(uploadError.message);
+        console.error(uploadError);
+      }
     }
-    
+
     onChange(newBlocks);
     if (lastAddedBlockId) {
-        setActiveBlockId(lastAddedBlockId);
+      setActiveBlockId(lastAddedBlockId);
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
+    setIsUploading(false);
   };
+
 
   const handleRemoveBlock = (id: string) => {
     const blockToRemove = blocks.find(b => b.id === id);
     if (blockToRemove?.type === 'image' && blockToRemove.url.startsWith('blob:')) {
-        URL.revokeObjectURL(blockToRemove.url);
+      URL.revokeObjectURL(blockToRemove.url);
     }
+    // Note: For a complete solution, you might want to delete the image from Supabase storage as well.
+    // This requires parsing the URL to get the file path and calling supabase.storage.from(...).remove(...).
 
     let newBlocks = blocks.filter(b => b.id !== id);
     if (newBlocks.length === 0) {
-        const newId = generateBlockId('text');
-        newBlocks.push({ id: newId, type: 'text', content: '' });
-        setActiveBlockId(newId);
+      const newId = generateBlockId('text');
+      newBlocks.push({ id: newId, type: 'text', content: '' });
+      setActiveBlockId(newId);
     }
     onChange(newBlocks);
   };
@@ -172,18 +210,18 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
   const handleMoveUp = (id: string) => {
     const index = blocks.findIndex(b => b.id === id);
     if (index > 0) {
-        const newBlocks = [...blocks];
-        [newBlocks[index - 1], newBlocks[index]] = [newBlocks[index], newBlocks[index - 1]];
-        onChange(newBlocks);
+      const newBlocks = [...blocks];
+      [newBlocks[index - 1], newBlocks[index]] = [newBlocks[index], newBlocks[index - 1]];
+      onChange(newBlocks);
     }
   };
 
   const handleMoveDown = (id: string) => {
     const index = blocks.findIndex(b => b.id === id);
     if (index !== -1 && index < blocks.length - 1) {
-        const newBlocks = [...blocks];
-        [newBlocks[index], newBlocks[index + 1]] = [newBlocks[index + 1], newBlocks[index]];
-        onChange(newBlocks);
+      const newBlocks = [...blocks];
+      [newBlocks[index], newBlocks[index + 1]] = [newBlocks[index + 1], newBlocks[index]];
+      onChange(newBlocks);
     }
   };
 
@@ -207,17 +245,17 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
 
   const handleResizeMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isResizing || !editorRef.current) return;
-    
+
     const deltaX = e.clientX - resizeStartX;
     const editorWidth = editorRef.current.offsetWidth;
     const percentageDelta = (deltaX / editorWidth) * 100;
-    
+
     const newBlocks = blocks.map(block => {
-        if (block.id === isResizing && block.type === 'image') {
-            const newWidth = Math.max(20, Math.min(100, initialWidth + percentageDelta));
-            return { ...block, width: newWidth };
-        }
-        return block;
+      if (block.id === isResizing && block.type === 'image') {
+        const newWidth = Math.max(20, Math.min(100, initialWidth + percentageDelta));
+        return { ...block, width: newWidth };
+      }
+      return block;
     });
     onChange(newBlocks as ContentBlock[]);
   };
@@ -228,7 +266,7 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
     const newBlockId = generateBlockId('text');
     const safeBlocks = blocks || [];
     const index = blockId ? safeBlocks.findIndex(b => b.id === blockId) : safeBlocks.length - 1;
-    
+
     const newBlocks = [...safeBlocks];
     newBlocks.splice(index + 1, 0, { id: newBlockId, type: 'text', content: '' });
     onChange(newBlocks);
@@ -237,21 +275,20 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
   };
 
   return (
-    <div 
+    <div
       ref={editorRef}
-      className={`rich-description-editor border border-gray-300 rounded-lg overflow-hidden ${className}`}
+      className={`rich-description-editor border border-gray-300 rounded-lg overflow-hidden ${className} ${isResizing ? 'cursor-ew-resize' : ''}`}
       onMouseMove={(e) => { if (isResizing) handleResizeMove(e); }}
       onMouseUp={handleResizeEnd}
       onMouseLeave={handleResizeEnd}
     >
       <div className="space-y-4 p-4">
-        {/* FIX: Add a fallback to an empty array to prevent 'map' of undefined error. */}
         {(blocks || []).map((block, index) => (
           <div key={block.id} className="relative group">
             {block.type === 'text' ? (
               <div className="relative">
                 <textarea
-                  ref={el => { if(el) textareaRefs.current[block.id] = el; }}
+                  ref={el => { if (el) textareaRefs.current[block.id] = el; }}
                   value={block.content}
                   onChange={(e) => handleTextChange(e, block.id)}
                   onFocus={(e) => handleTextareaFocus(block.id, e)}
@@ -291,17 +328,17 @@ const RichDescriptionEditor: React.FC<RichDescriptionEditorProps> = ({
           </div>
         ))}
       </div>
-      
+
       {error && (
         <div className="px-4 py-2 bg-red-50 border-t border-red-200 flex items-center text-red-700 text-sm">
           <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" /> <p>{error}</p>
         </div>
       )}
-      
+
       <div className="px-4 pb-4 flex space-x-2 border-t border-gray-200 pt-2">
-        <button type="button" onClick={handleAddImage} className="flex items-center space-x-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors text-sm"><ImageIcon size={16} /><span>Add Image</span></button>
+        <button type="button" onClick={handleAddImage} disabled={isUploading} className="flex items-center space-x-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"><ImageIcon size={16} /><span>{isUploading ? "Uploading..." : "Add Image"}</span></button>
         <button type="button" onClick={() => addTextBlockAfter(blocks?.length > 0 ? blocks[blocks.length - 1].id : null)} className="flex items-center space-x-1 px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700 transition-colors text-sm"><Type size={16} /><span>Add Text Block</span></button>
-        <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" />
+        <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" disabled={isUploading} />
       </div>
     </div>
   );
