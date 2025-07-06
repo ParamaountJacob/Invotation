@@ -3,17 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { fetchCampaigns, fetchCampaignSupporters, convertCampaignToFrontend } from '../lib/campaigns';
 import { Submission } from '../types';
-import { Sword, Trophy, Clock, CheckCircle, XCircle, AlertCircle, Plus, ArrowLeft } from 'lucide-react';
+import { Sword, Trophy, Plus, ArrowLeft } from 'lucide-react';
 import CompletionPlaque from '../components/CompletionPlaque';
-import { useCoin } from '../context/CoinContext'; 
-
-const statusIcons = {
-  pending: <Clock className="w-5 h-5 text-yellow-500" />,
-  review: <AlertCircle className="w-5 h-5 text-blue-500" />,
-  approved: <CheckCircle className="w-5 h-5 text-green-500" />,
-  rejected: <XCircle className="w-5 h-5 text-red-500" />,
-  development: <CheckCircle className="w-5 h-5 text-purple-500" />
-};
+import { useCoin } from '../context/CoinContext';
+import StatusBadge from '../components/shared/StatusBadge';
 
 // Cache for treasure hoard data
 let treasureCache: {
@@ -73,7 +66,7 @@ const TreasureHoard = () => {
       let campaignsWithSupport: any[] = [];
       if (supportData.data && supportData.data.length > 0) {
         const campaigns = await fetchCampaigns(false);
-        
+
         // Process campaigns in parallel
         const campaignPromises = supportData.data.map(async (support) => {
           const campaign = campaigns.find(c => c.id === support.campaign_id);
@@ -83,7 +76,7 @@ const TreasureHoard = () => {
               Math.round((campaign.current_reservations / campaign.reservation_goal) * 100),
               100
             );
-            
+
             return {
               id: campaign.id,
               title: campaign.title,
@@ -102,7 +95,7 @@ const TreasureHoard = () => {
           }
           return null;
         });
-        
+
         const results = await Promise.all(campaignPromises);
         campaignsWithSupport = results.filter(Boolean);
       }
@@ -128,12 +121,12 @@ const TreasureHoard = () => {
 
   const getPlaqueMode = (campaign: any) => {
     if (campaign.isCompleted) return 'completed';
-    
+
     const userPosition = campaign.userSupport?.position;
     if (userPosition === 1) return 'first';
     if (userPosition === 2) return 'second';
     if (userPosition === 3) return 'third';
-    
+
     return 'percentage';
   };
 
@@ -191,11 +184,11 @@ const TreasureHoard = () => {
                   loading="lazy"
                 />
               </div>
-              
+
               {/* Interactive Coin Vault */}
               <div className="bg-gradient-to-br from-yellow-300 to-yellow-400 rounded-2xl p-6 shadow-inner border-2 border-yellow-200">
                 <h3 className="text-xl font-bold text-yellow-900 mb-4">Your Coin Vault</h3>
-                
+
                 {coins === 0 ? (
                   <div className="text-center py-8">
                     <div className="text-yellow-800 mb-4">Your vault is empty</div>
@@ -226,14 +219,14 @@ const TreasureHoard = () => {
                     ))}
                   </div>
                 )}
-                
+
                 {coins > 50 && (
                   <div className="text-center mt-4 text-yellow-800 font-medium">
                     Showing 50 of your {coins} coins
                   </div>
                 )}
               </div>
-              
+
               <div className="flex justify-center space-x-4 mt-6">
                 <button
                   onClick={() => navigate('/buy-coins')}
@@ -257,11 +250,10 @@ const TreasureHoard = () => {
             <div className="flex bg-gray-100 rounded-2xl p-2 shadow-xl border border-gray-300">
               <button
                 onClick={() => setActiveTab('hoard')}
-                className={`flex items-center space-x-3 px-8 py-4 rounded-xl font-bold transition-all duration-300 ${
-                  activeTab === 'hoard'
+                className={`flex items-center space-x-3 px-8 py-4 rounded-xl font-bold transition-all duration-300 ${activeTab === 'hoard'
                     ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg transform scale-105'
                     : 'text-gray-700 hover:bg-white hover:shadow-md'
-                }`}
+                  }`}
               >
                 <img
                   src="https://res.cloudinary.com/digjsdron/image/upload/v1749679800/Coin_fro3cf.webp"
@@ -273,11 +265,10 @@ const TreasureHoard = () => {
               </button>
               <button
                 onClick={() => setActiveTab('conquests')}
-                className={`flex items-center space-x-3 px-8 py-4 rounded-xl font-bold transition-all duration-300 relative ${
-                  activeTab === 'conquests'
+                className={`flex items-center space-x-3 px-8 py-4 rounded-xl font-bold transition-all duration-300 relative ${activeTab === 'conquests'
                     ? 'bg-gradient-to-r from-gray-700 to-gray-800 text-white shadow-lg transform scale-105'
                     : 'text-gray-700 hover:bg-white hover:shadow-md'
-                }`}
+                  }`}
               >
                 <Sword className={`w-6 h-6 ${activeTab === 'conquests' ? 'text-red-300' : ''}`} />
                 <span className="text-lg">My Submissions</span>
@@ -312,7 +303,7 @@ const TreasureHoard = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {supportedCampaigns.map((campaign) => (
-                    <div 
+                    <div
                       key={campaign.id}
                       className="bg-white rounded-xl p-6 shadow-lg border border-blue-200 hover:shadow-xl transition-all duration-300 cursor-pointer hover:border-blue-400 hover:bg-blue-50"
                       onClick={() => navigate(`/campaign/${campaign.id}`)}
@@ -325,7 +316,7 @@ const TreasureHoard = () => {
                           loading="lazy"
                         />
                       </div>
-                      
+
                       <CompletionPlaque
                         mode={getPlaqueMode(campaign)}
                         percentage={campaign.progressPercentage}
@@ -366,16 +357,13 @@ const TreasureHoard = () => {
               ) : (
                 <div className="space-y-6">
                   {submissions.map((submission) => (
-                    <div 
+                    <div
                       key={submission.id}
                       className="bg-gradient-to-r from-gray-700 to-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-600 hover:border-red-400 overflow-hidden group cursor-pointer relative"
                       onClick={() => navigate(`/submission/${submission.id}`)}
                     >
                       <div className="p-8">
-                        <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full border bg-gray-600 text-white border-gray-500 mb-4">
-                          {statusIcons[submission.status]}
-                          <span className="capitalize text-sm font-medium">{submission.status}</span>
-                        </div>
+                        <StatusBadge status={submission.status} size="sm" className="mb-4" />
 
                         <h2 className="text-2xl font-bold mb-2 text-white group-hover:text-red-400 transition-colors">
                           {submission.idea_name}
@@ -385,7 +373,7 @@ const TreasureHoard = () => {
                         <p className="text-sm text-gray-400">
                           Submitted on {new Date(submission.created_at).toLocaleDateString()}
                         </p>
-                        
+
                         <div className="absolute bottom-4 right-4 bg-gray-600 hover:bg-gray-500 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                           <ArrowLeft className="w-5 h-5 text-white rotate-180" />
                         </div>

@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Trophy, Medal, Award, CheckCircle, Calendar, DollarSign, Users, Star, TrendingUp } from 'lucide-react';
+import { ArrowLeft, ExternalLink, CheckCircle, Calendar, DollarSign, Users, Star, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
+import PositionIcon from '../components/shared/PositionIcon';
 
 // This would normally come from the same data source as CompletedProjects
 const completedProjects = [
@@ -123,20 +124,7 @@ const completedProjects = [
   }
 ];
 
-const getPositionIcon = (position: number) => {
-  switch (position) {
-    case 1:
-      return <Trophy className="w-5 h-5 text-yellow-500" />;
-    case 2:
-      return <Medal className="w-5 h-5 text-gray-400" />;
-    case 3:
-      return <Award className="w-5 h-5 text-orange-500" />;
-    default:
-      return <div className="w-5 h-5 bg-gray-300 rounded-full flex items-center justify-center text-xs font-bold text-gray-600">
-        {position}
-      </div>;
-  }
-};
+
 
 const CompletedProjectDetail = () => {
   const { id } = useParams();
@@ -177,7 +165,7 @@ const CompletedProjectDetail = () => {
             <ArrowLeft size={20} className="mr-2" />
             Back to Completed Projects
           </button>
-          
+
           <div className="inline-block bg-green-600 text-white text-sm font-bold uppercase px-3 py-1 rounded-full">
             ✓ SUCCESSFULLY COMPLETED
           </div>
@@ -321,11 +309,10 @@ const CompletedProjectDetail = () => {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as any)}
-                className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${
-                  activeTab === tab.key
+                className={`flex-1 py-4 px-6 text-center font-medium transition-colors ${activeTab === tab.key
                     ? 'text-green-600 border-b-2 border-green-600 bg-green-50'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -338,8 +325,8 @@ const CompletedProjectDetail = () => {
                 <div>
                   <h3 className="text-xl font-bold mb-4">Campaign Success Story</h3>
                   <p className="text-gray-700 leading-relaxed mb-4">
-                    This project exemplifies the power of community-driven innovation. Starting with a simple idea 
-                    and a modest funding goal, it captured the imagination of thousands of backers who believed in 
+                    This project exemplifies the power of community-driven innovation. Starting with a simple idea
+                    and a modest funding goal, it captured the imagination of thousands of backers who believed in
                     the vision.
                   </p>
                   <div className="bg-green-50 rounded-xl p-6 border border-green-200">
@@ -360,34 +347,32 @@ const CompletedProjectDetail = () => {
               <div>
                 <h3 className="text-xl font-bold mb-6">Campaign Supporters Hall of Fame</h3>
                 <p className="text-gray-600 mb-6">
-                  These early supporters helped make this project a reality. Their coin investments secured 
+                  These early supporters helped make this project a reality. Their coin investments secured
                   exclusive discounts and helped fund the development.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {project.topBackers.map((backer) => (
-                    <div 
-                      key={backer.position}
-                      className={`rounded-xl p-4 border-2 ${
-                        backer.position <= 3 
-                          ? 'bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200' 
-                          : 'bg-gray-50 border-gray-200'
+                  {project.topBackers.map((backer) => (<div
+                    key={backer.position}
+                    className={`rounded-xl p-4 border-2 ${backer.position <= 3
+                        ? 'bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200'
+                        : 'bg-gray-50 border-gray-200'
                       }`}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-2">
-                          {getPositionIcon(backer.position)}
-                          <span className="font-bold">#{backer.position}</span>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-bold text-green-600">{backer.discount}% OFF</div>
-                          <div className="text-xs text-gray-500">Saved {backer.actualDiscount}</div>
-                        </div>
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <PositionIcon position={backer.position} size="md" />
+                        <span className="font-bold">#{backer.position}</span>
                       </div>
-                      <div className="text-center">
-                        <div className="font-bold text-gray-900">{backer.username}</div>
-                        <div className="text-sm text-gray-600">{backer.coins} coins invested</div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-green-600">{backer.discount}% OFF</div>
+                        <div className="text-xs text-gray-500">Saved {backer.actualDiscount}</div>
                       </div>
                     </div>
+                    <div className="text-center">
+                      <div className="font-bold text-gray-900">{backer.username}</div>
+                      <div className="text-sm text-gray-600">{backer.coins} coins invested</div>
+                    </div>
+                  </div>
                   ))}
                 </div>
               </div>
@@ -406,10 +391,10 @@ const CompletedProjectDetail = () => {
                         <div className="flex items-center space-x-3 mb-1">
                           <h4 className="font-bold text-gray-900">{event.event}</h4>
                           <span className="text-sm text-gray-500">
-                            {new Date(event.date).toLocaleDateString('en-US', { 
-                              year: 'numeric', 
-                              month: 'long', 
-                              day: 'numeric' 
+                            {new Date(event.date).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
                             })}
                           </span>
                         </div>
@@ -428,7 +413,7 @@ const CompletedProjectDetail = () => {
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-4 text-green-900">Inspired by This Success?</h2>
             <p className="text-green-800 mb-6 max-w-2xl mx-auto">
-              Every successful project starts with a simple idea. Join our community of innovators 
+              Every successful project starts with a simple idea. Join our community of innovators
               and turn your vision into the next success story.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -1,22 +1,7 @@
 import { useState } from 'react';
-import { Clock, CheckCircle, XCircle, AlertCircle, User, Calendar, DollarSign } from 'lucide-react';
+import { User, Calendar, DollarSign } from 'lucide-react';
 import { Submission, Profile } from '../../types';
-
-const statusIcons = {
-  pending: <Clock className="w-5 h-5 text-yellow-500" />,
-  review: <AlertCircle className="w-5 h-5 text-blue-500" />,
-  approved: <CheckCircle className="w-5 h-5 text-green-500" />,
-  rejected: <XCircle className="w-5 h-5 text-red-500" />,
-  development: <CheckCircle className="w-5 h-5 text-purple-500" />
-};
-
-const statusColors = {
-  pending: 'bg-yellow-50 text-yellow-800 border-yellow-200',
-  review: 'bg-blue-50 text-blue-800 border-blue-200',
-  approved: 'bg-green-50 text-green-800 border-green-200',
-  rejected: 'bg-red-50 text-red-800 border-red-200',
-  development: 'bg-purple-50 text-purple-800 border-purple-200'
-};
+import StatusBadge from '../../components/shared/StatusBadge';
 
 interface SubmissionReviewProps {
   submissions: (Submission & { profile: Profile })[];
@@ -30,11 +15,11 @@ const SubmissionReview = ({ submissions, onSubmissionClick, onStatusUpdate }: Su
 
   const filteredSubmissions = submissions.filter(submission => {
     const matchesSearch = submission.idea_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         submission.short_description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         submission.profile.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      submission.short_description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      submission.profile.email.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesStatus = filterStatus === 'all' || submission.status === filterStatus;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -42,7 +27,7 @@ const SubmissionReview = ({ submissions, onSubmissionClick, onStatusUpdate }: Su
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h2 className="text-2xl font-bold text-gray-900">Submission Review</h2>
-        
+
         <div className="flex flex-col sm:flex-row gap-4">
           <input
             type="text"
@@ -51,7 +36,7 @@ const SubmissionReview = ({ submissions, onSubmissionClick, onStatusUpdate }: Su
             onChange={(e) => setSearchTerm(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
           />
-          
+
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
@@ -76,7 +61,7 @@ const SubmissionReview = ({ submissions, onSubmissionClick, onStatusUpdate }: Su
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">{submission.idea_name}</h3>
                     <p className="text-gray-600 mb-3">{submission.short_description}</p>
-                    
+
                     <div className="flex items-center space-x-4 text-sm text-gray-500">
                       <div className="flex items-center">
                         <User className="w-4 h-4 mr-1" />
@@ -94,15 +79,12 @@ const SubmissionReview = ({ submissions, onSubmissionClick, onStatusUpdate }: Su
                       )}
                     </div>
                   </div>
-                  
-                  <div className={`px-3 py-1 rounded-full border flex items-center space-x-2 ${statusColors[submission.status]}`}>
-                    {statusIcons[submission.status]}
-                    <span className="capitalize font-medium">{submission.status}</span>
-                  </div>
+
+                  <StatusBadge status={submission.status} />
                 </div>
               </div>
             </div>
-            
+
             <div className="flex flex-wrap gap-2 mt-4">
               <button
                 onClick={() => onStatusUpdate(submission.id, 'approved')}
@@ -140,7 +122,7 @@ const SubmissionReview = ({ submissions, onSubmissionClick, onStatusUpdate }: Su
             </div>
           </div>
         ))}
-        
+
         {filteredSubmissions.length === 0 && (
           <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200">
             <AlertCircle className="mx-auto h-12 w-12 text-gray-400" />

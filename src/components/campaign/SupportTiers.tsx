@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Trophy, Medal, Award, ArrowRight, AlertCircle, X, Check, Info } from 'lucide-react';
+import { ArrowRight, AlertCircle, X, Check, Info } from 'lucide-react';
+import PositionIcon from '../shared/PositionIcon';
 
 interface TierInfo {
   position: number;
@@ -33,8 +34,8 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
   isSupporting
 }) => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [tierToConfirm, setTierToConfirm] = useState<{position: number, coins: number, discount: number} | null>(null);
-  
+  const [tierToConfirm, setTierToConfirm] = useState<{ position: number, coins: number, discount: number } | null>(null);
+
   // Base tier (position 5) - everyone gets this with 1 coin
   const baseTier: TierInfo = {
     position: 5,
@@ -43,12 +44,12 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
     coinsRequired: 1, // Always 1 coin for base tier
     isUserPosition: userSupport?.position === 5
   };
-  
+
   // Special tiers (positions 1-4) - higher positions with better discounts
   const specialTiers: TierInfo[] = Array.from({ length: 4 }, (_, i) => {
     const position = i + 1; // Position (1, 2, 3, 4)
     const existingSupporter = supporters.find(s => s.position === position);
-    
+
     // Calculate discount based on position
     let discount;
     if (position === 1) discount = 40;
@@ -67,23 +68,9 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
 
   // Combine tiers with base tier first, then special tiers in descending order
   const allTiers = [baseTier, ...specialTiers.reverse()];
-  
-  // Get position icon based on position number
-  const getPositionIcon = (position: number) => {
-    switch (position) {
-      case 1:
-        return <Trophy className="w-6 h-6 text-yellow-500" />;
-      case 2:
-        return <Medal className="w-6 h-6 text-gray-400" />;
-      case 3:
-        return <Award className="w-6 h-6 text-orange-500" />;
-      default:
-        return <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-sm font-bold text-gray-700">
-          {position}
-        </div>;
-    }
-  };
-  
+
+
+
   // Get background color based on position
   const getPositionColor = (position: number) => {
     switch (position) {
@@ -99,7 +86,7 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
         return 'bg-white border-gray-300';
     }
   };
-  
+
   // Get discount badge style based on position
   const getDiscountBadgeStyle = (position: number) => {
     switch (position) {
@@ -115,21 +102,21 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
         return 'bg-gradient-to-r from-blue-500 to-blue-600 text-white';
     }
   };
-  
+
   // Handle tier selection
   const handleTierSelect = (position: number, coinsRequired: number, discount: number) => {
     setSupportAmount(coinsRequired);
-    
+
     // Show confirmation modal for all positions
-    setTierToConfirm({position, coins: coinsRequired, discount});
+    setTierToConfirm({ position, coins: coinsRequired, discount });
     setShowConfirmModal(true);
   };
-  
+
   // Check if user can afford the selected tier
   const canAffordTier = (coinsRequired: number) => {
     return coins >= coinsRequired;
   };
-  
+
   // Confirm tier selection and proceed with support
   const confirmTierSelection = () => {
     if (tierToConfirm) {
@@ -138,7 +125,7 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
       setShowConfirmModal(false);
     }
   };
-  
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
       <div className="p-6 border-b border-gray-200 mb-4">
@@ -146,13 +133,13 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
         <p className="text-gray-600 mb-4">
           Secure your position to get the best discount when this product launches. Higher positions get bigger discounts!
         </p>
-        
+
         {/* User's current position */}
         {userSupport && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                {getPositionIcon(userSupport.position || 999)}
+                <PositionIcon position={userSupport.position || 999} size="sm" variant="compact" />
                 <span className="font-medium text-green-800">
                   Your current position: #{userSupport.position || 'Unranked'}
                 </span>
@@ -166,7 +153,7 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
             </p>
           </div>
         )}
-        
+
         {/* Available coins */}
         {user && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
@@ -185,12 +172,12 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
           </div>
         )}
       </div>
-      
+
       {/* Support Tiers List - Kickstarter Style */}
       <div className="space-y-8 p-6">
         {/* Base tier first, then special tiers */}
         {/* Base Tier - Special Styling */}
-        <div 
+        <div
           key={baseTier.position}
           className={`${baseTier.isUserPosition ? 'border-green-500 ring-1 ring-green-500' : ''} rounded-xl transition-all duration-300 overflow-hidden`}
         >
@@ -207,14 +194,14 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
               </div>
             </div>
           </div>
-          
+
           <div className="mb-4">
             <div className="flex items-center space-x-2 text-green-600 font-medium">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <p>Everyone gets this tier with 1 coin</p>
             </div>
           </div>
-          
+
           <div className="space-y-3 mb-4">
             <div className="flex items-start space-x-2">
               <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
@@ -235,7 +222,7 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
               </p>
             </div>
           </div>
-          
+
           {user && !userSupport && (
             <button
               onClick={() => handleTierSelect(baseTier.position, 1, baseTier.discount)}
@@ -253,30 +240,28 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
             </button>
           )}
         </div>
-        
+
         {/* Special Tiers */}
         {specialTiers.map((tier) => (
-          <div 
+          <div
             key={tier.position}
-            className={`${getPositionColor(tier.position)} ${
-              tier.isUserPosition ? 'border-green-500 ring-1 ring-green-500' : 'border'
-            } rounded-xl shadow-md transition-all duration-300 overflow-hidden`}
+            className={`${getPositionColor(tier.position)} ${tier.isUserPosition ? 'border-green-500 ring-1 ring-green-500' : 'border'
+              } rounded-xl shadow-md transition-all duration-300 overflow-hidden`}
           >
             {/* Tier Header */}
             <div className="p-5 border-b border-gray-200 bg-white bg-opacity-80">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-3">
-                  {getPositionIcon(tier.position)}
-                  <div>
-                    <h4 className="font-bold text-gray-900">
-                      Position #{tier.position}
-                    </h4>
-                    <div className={`${getDiscountBadgeStyle(tier.position)} px-3 py-0.5 rounded-full text-xs font-bold inline-block mt-1`}>
-                      {tier.discount}% OFF
-                    </div>
+              <div className="flex justify-between items-center">              <div className="flex items-center space-x-3">
+                <PositionIcon position={tier.position} size="lg" />
+                <div>
+                  <h4 className="font-bold text-gray-900">
+                    Position #{tier.position}
+                  </h4>
+                  <div className={`${getDiscountBadgeStyle(tier.position)} px-3 py-0.5 rounded-full text-xs font-bold inline-block mt-1`}>
+                    {tier.discount}% OFF
                   </div>
                 </div>
-                
+              </div>
+
                 {tier.isUserPosition && (
                   <div className="bg-green-100 text-green-800 px-3 py-1 rounded-lg text-sm font-medium">
                     Your Position
@@ -284,7 +269,7 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
                 )}
               </div>
             </div>
-            
+
             {/* Tier Content */}
             <div className="p-5">
               <div className="mb-4">
@@ -311,7 +296,7 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
                   </div>
                 )}
               </div>
-              
+
               <div className="space-y-3 mb-4">
                 <div className="flex items-start space-x-2">
                   <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
@@ -332,12 +317,12 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                 {user && !tier.isUserPosition && tier.position !== 5 && (
                   canAffordTier(tier.coinsRequired) ? (
                     <button
-                      onClick={() => handleTierSelect(tier.position, tier.coinsRequired, tier.discount)} 
+                      onClick={() => handleTierSelect(tier.position, tier.coinsRequired, tier.discount)}
                       disabled={isSupporting}
                       className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                     >
@@ -362,7 +347,7 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
           </div>
         ))}
       </div>
-      
+
       {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
@@ -376,17 +361,17 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
                 <X size={24} />
               </button>
             </div>
-            
+
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 mb-6 border border-blue-200 shadow-sm">
               <div className="flex items-start space-x-4">
                 <Info className="w-8 h-8 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div>
                   <h4 className="text-lg font-bold text-blue-900 mb-2">Support Details</h4>
                   <p className="text-blue-800 mb-4">
-                    You're about to spend <span className="font-bold">{tierToConfirm?.coins} coins</span> to 
+                    You're about to spend <span className="font-bold">{tierToConfirm?.coins} coins</span> to
                     {tierToConfirm?.position ? ` secure position #${tierToConfirm.position}` : ' support this project'}.
                   </p>
-                  
+
                   <div className="bg-white bg-opacity-50 rounded-lg p-4 border border-blue-200">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-blue-800">Your coins:</span>
@@ -401,7 +386,7 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
                       <span className="font-bold text-blue-900">{coins - (tierToConfirm?.coins || 0)}</span>
                     </div>
                   </div>
-                  
+
                   <div className="mt-4 flex items-center space-x-2">
                     <div className={`${getDiscountBadgeStyle(tierToConfirm?.position || 0)} px-3 py-1 rounded-full text-sm font-bold`}>
                       {tierToConfirm?.discount}% OFF
@@ -413,7 +398,7 @@ const SupportTiers: React.FC<SupportTiersProps> = ({
                 </div>
               </div>
             </div>
-            
+
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setShowConfirmModal(false)}

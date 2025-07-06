@@ -4,22 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useState, useEffect } from 'react';
 import { Submission, Profile } from '../types';
 import SubmissionTipsModal from '../components/SubmissionTipsModal';
-
-const statusIcons = {
-  pending: <Clock className="w-5 h-5 text-yellow-500" />,
-  review: <AlertCircle className="w-5 h-5 text-blue-500" />,
-  approved: <CheckCircle className="w-5 h-5 text-green-500" />,
-  rejected: <XCircle className="w-5 h-5 text-red-500" />,
-  development: <CheckCircle className="w-5 h-5 text-purple-500" />
-};
-
-const statusColors = {
-  pending: 'bg-yellow-50 text-yellow-800 border-yellow-200',
-  review: 'bg-blue-50 text-blue-800 border-blue-200',
-  approved: 'bg-green-50 text-green-800 border-green-200',
-  rejected: 'bg-red-50 text-red-800 border-red-200',
-  development: 'bg-purple-50 text-purple-800 border-purple-200'
-};
+import { StatusBadge } from '../components/shared/StatusBadge';
 
 const Submissions = () => {
   const navigate = useNavigate();
@@ -59,7 +44,7 @@ const Submissions = () => {
         setLoading(false);
       }
     };
-    
+
     checkSession();
   }, [navigate]);
 
@@ -126,7 +111,7 @@ const Submissions = () => {
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold">All Submissions</h1>
           </div>
-          
+
           <div className="space-y-6">
             {submissions.map((submission) => (
               <div key={submission.id} className="bg-white rounded-lg shadow-md p-6">
@@ -139,15 +124,10 @@ const Submissions = () => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <div className={`px-3 py-1 rounded-full border ${statusColors[submission.status]}`}>
-                      <div className="flex items-center space-x-2">
-                        {statusIcons[submission.status]}
-                        <span className="capitalize">{submission.status}</span>
-                      </div>
-                    </div>
+                    <StatusBadge status={submission.status} />
                   </div>
                 </div>
-                
+
                 <div className="mt-4 flex justify-end space-x-2">
                   <button
                     onClick={() => updateStatus(submission.id, 'approved')}
@@ -185,13 +165,13 @@ const Submissions = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
-      
+
       if (error) throw error;
       navigate('/dashboard');
     } catch (err: any) {
@@ -202,13 +182,13 @@ const Submissions = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     try {
       const { error } = await supabase.auth.signUp({
         email,
         password
       });
-      
+
       if (error) throw error;
       navigate('/dashboard');
     } catch (err: any) {
@@ -229,7 +209,7 @@ const Submissions = () => {
               Track your submitted ideas and stay updated on their progress. Sign in to view your submissions.
             </p>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
             <div className="p-8 text-center">
               <div className="mb-8">
@@ -245,7 +225,7 @@ const Submissions = () => {
                   Sign In
                 </button>
               </div>
-              
+
               <div className="border-t border-gray-200 pt-8">
                 <h3 className="text-lg font-bold mb-4">What happens after you submit?</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
@@ -289,8 +269,8 @@ const Submissions = () => {
 
           <div className="text-center">
             <p className="text-gray-600 mb-4">Ready to share your brilliant idea?</p>
-            <a 
-              href="/submit" 
+            <a
+              href="/submit"
               className="inline-flex items-center bg-white text-primary px-6 py-3 rounded-xl font-bold hover:bg-gray-50 transition-colors border-2 border-primary shadow-lg"
             >
               <Plus className="w-5 h-5 mr-2" />
@@ -299,7 +279,7 @@ const Submissions = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Auth Modal */}
       {showAuthModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -307,13 +287,13 @@ const Submissions = () => {
             <h2 className="text-2xl font-bold mb-6 text-center">
               {isSignUp ? 'Create Account' : 'Sign In'}
             </h2>
-            
+
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
                 {error}
               </div>
             )}
-            
+
             <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -327,7 +307,7 @@ const Submissions = () => {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Password
@@ -340,7 +320,7 @@ const Submissions = () => {
                   required
                 />
               </div>
-              
+
               <button
                 type="submit"
                 className="w-full btn-primary py-3 text-lg"
@@ -348,7 +328,7 @@ const Submissions = () => {
                 {isSignUp ? 'Create Account' : 'Sign In'}
               </button>
             </form>
-            
+
             <div className="mt-4 text-center">
               <button
                 onClick={() => setIsSignUp(!isSignUp)}
@@ -357,7 +337,7 @@ const Submissions = () => {
                 {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
               </button>
             </div>
-            
+
             <button
               onClick={() => setShowAuthModal(false)}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
@@ -367,9 +347,9 @@ const Submissions = () => {
           </div>
         </div>
       )}
-      
+
       {/* Submission Tips Modal */}
-      <SubmissionTipsModal 
+      <SubmissionTipsModal
         isOpen={showTipsModal}
         onClose={() => setShowTipsModal(false)}
       />

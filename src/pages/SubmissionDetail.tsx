@@ -3,22 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Submission, SubmissionUpdate, SubmissionFile, ScoreDescription } from '../types';
 import { ArrowLeft, Clock, CheckCircle, XCircle, AlertCircle, DollarSign, Target, Lightbulb, FileText, Download, Box as Box3d, Plus, MessageSquare } from 'lucide-react';
-
-const statusIcons = {
-  pending: <Clock className="w-5 h-5 text-yellow-500" />,
-  review: <AlertCircle className="w-5 h-5 text-blue-500" />,
-  approved: <CheckCircle className="w-5 h-5 text-green-500" />,
-  rejected: <XCircle className="w-5 h-5 text-red-500" />,
-  development: <CheckCircle className="w-5 h-5 text-purple-500" />
-};
-
-const statusColors = {
-  pending: 'bg-yellow-50 text-yellow-800 border-yellow-200',
-  review: 'bg-blue-50 text-blue-800 border-blue-200',
-  approved: 'bg-green-50 text-green-800 border-green-200',
-  rejected: 'bg-red-50 text-red-800 border-red-200',
-  development: 'bg-purple-50 text-purple-800 border-purple-200'
-};
+import { StatusBadge } from '../components/shared/StatusBadge';
 
 const statusMessages = {
   pending: 'Your submission is being reviewed by our team. This typically takes 2-3 business days.',
@@ -158,10 +143,7 @@ const SubmissionDetail = () => {
                   <h1 className="text-3xl font-bold mb-2">{submission.idea_name}</h1>
                   <p className="text-lg text-gray-600">{submission.short_description}</p>
                 </div>
-                <div className={`${statusColors[submission.status]} px-6 py-3 rounded-xl border flex items-center space-x-3 flex-shrink-0`}>
-                  {statusIcons[submission.status]}
-                  <span className="font-medium capitalize">{submission.status}</span>
-                </div>
+                <StatusBadge status={submission.status} size="lg" className="px-6 py-3" />
               </div>
             </div>
 
@@ -183,12 +165,12 @@ const SubmissionDetail = () => {
                     <Lightbulb className="w-6 h-6 text-primary" />
                     <h2>Project Details</h2>
                   </div>
-                  
+
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h3 className="font-medium text-gray-700 mb-2">Current Stage</h3>
                     <p className="text-gray-600">{submission.idea_stage}</p>
                   </div>
-                  
+
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h3 className="font-medium text-gray-700 mb-2">Description</h3>
                     <p className="text-gray-600 whitespace-pre-wrap">{submission.idea_details}</p>
@@ -200,7 +182,7 @@ const SubmissionDetail = () => {
                     <Target className="w-6 h-6 text-primary" />
                     <h2>Financial Overview</h2>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {submission.funding_needs && (
                       <div className="bg-gray-50 rounded-lg p-4">
@@ -213,7 +195,7 @@ const SubmissionDetail = () => {
                         </p>
                       </div>
                     )}
-                    
+
                     {submission.retail_price && (
                       <div className="bg-gray-50 rounded-lg p-4">
                         <div className="flex items-center space-x-2 mb-2">
@@ -269,23 +251,22 @@ const SubmissionDetail = () => {
                     <Clock className="w-6 h-6 text-primary" />
                     <h2>Updates & Progress</h2>
                   </div>
-                  
+
                   <button className="text-primary hover:text-primary-dark text-sm font-medium flex items-center">
                     <MessageSquare className="w-4 h-4 mr-1" />
                     Contact Team
                   </button>
                 </div>
-                
+
                 {updates.length > 0 ? (
                   <div className="space-y-4">
                     {updates.map((update) => (
                       <div key={update.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                         <div className="flex items-center space-x-3 mb-2">
-                          <div className={`w-2 h-2 rounded-full ${
-                            update.status === 'approved' ? 'bg-green-500' :
-                            update.status === 'rejected' ? 'bg-red-500' :
-                            'bg-blue-500'
-                          }`} />
+                          <div className={`w-2 h-2 rounded-full ${update.status === 'approved' ? 'bg-green-500' :
+                              update.status === 'rejected' ? 'bg-red-500' :
+                                'bg-blue-500'
+                            }`} />
                           <p className="text-sm font-medium text-gray-600">
                             {new Date(update.created_at).toLocaleDateString(undefined, {
                               year: 'numeric',
@@ -308,7 +289,7 @@ const SubmissionDetail = () => {
                   </div>
                 )}
               </div>
-              
+
               {/* Add Update Button (for admins) */}
               <div className="flex justify-center">
                 <button

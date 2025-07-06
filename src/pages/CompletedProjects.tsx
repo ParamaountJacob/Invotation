@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ExternalLink, Trophy, Medal, Award, CheckCircle, Calendar, DollarSign, Users, Star } from 'lucide-react';
+import { ExternalLink, CheckCircle, Calendar, DollarSign, Users, Star } from 'lucide-react';
+import PositionIcon from '../components/shared/PositionIcon';
 
 type CompletedProject = {
   id: number;
@@ -29,18 +30,7 @@ type CompletedProject = {
   };
 };
 
-const getPositionIcon = (position: number) => {
-  switch (position) {
-    case 1:
-      return <Trophy className="w-4 h-4 text-yellow-500" />;
-    case 2:
-      return <Medal className="w-4 h-4 text-gray-400" />;
-    case 3:
-      return <Award className="w-4 h-4 text-orange-500" />;
-    default:
-      return null;
-  }
-};
+
 
 const completedProjects: CompletedProject[] = [
   {
@@ -224,7 +214,7 @@ const CompletedProjects = () => {
           </div>
           <h1 className="text-5xl font-bold mb-6 text-gray-900">Completed Projects</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            These innovative products successfully completed their crowdfunding campaigns and are now available for purchase. 
+            These innovative products successfully completed their crowdfunding campaigns and are now available for purchase.
             See how our community's support turned great ideas into market successes.
           </p>
         </div>
@@ -263,11 +253,10 @@ const CompletedProjects = () => {
             <button
               key={filter}
               onClick={() => setSelectedFilter(filter)}
-              className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-300 ${
-                selectedFilter === filter
+              className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-300 ${selectedFilter === filter
                   ? 'bg-green-600 text-white shadow-lg transform scale-105'
                   : 'bg-white text-gray-700 hover:bg-gray-50 hover:shadow-md border border-gray-200'
-              }`}
+                }`}
             >
               {filter === 'all' ? 'All Projects' : filter.charAt(0).toUpperCase() + filter.slice(1)}
             </button>
@@ -336,7 +325,7 @@ const CompletedProjects = () => {
                     {project.topBackers.map((backer) => (
                       <div key={backer.position} className="flex items-center justify-between text-sm">
                         <div className="flex items-center space-x-2">
-                          {getPositionIcon(backer.position)}
+                          <PositionIcon position={backer.position} size="sm" />
                           <span className="font-medium">#{backer.position} {backer.username}</span>
                         </div>
                         <span className="text-green-600 font-bold">{backer.discount}% off</span>
@@ -400,7 +389,7 @@ const CompletedProjects = () => {
           <div className="text-center">
             <h2 className="text-3xl font-bold mb-4 text-green-900">Your Idea Could Be Next!</h2>
             <p className="text-green-800 text-lg mb-8 max-w-2xl mx-auto">
-              These successful projects all started as simple ideas submitted by people like you. 
+              These successful projects all started as simple ideas submitted by people like you.
               Join our community of innovators and turn your vision into reality.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
