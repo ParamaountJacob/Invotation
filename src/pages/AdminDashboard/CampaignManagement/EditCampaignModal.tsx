@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Upload } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import RichDescriptionEditor, { ContentBlock } from '../../../components/RichDescriptionEditor';
@@ -36,7 +36,7 @@ const EditCampaignModal = ({ campaign, onClose, onSave }: EditCampaignModalProps
   const [uploading, setUploading] = useState(false);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  
+
   const [descriptionBlocks, setDescriptionBlocks] = useState<ContentBlock[]>([]);
   const [editForm, setEditForm] = useState({
     title: '',
@@ -48,12 +48,12 @@ const EditCampaignModal = ({ campaign, onClose, onSave }: EditCampaignModalProps
     minimum_bid: 1,
     kickstarter_url: '',
     amazon_url: '',
-    website_url: '',  
+    website_url: '',
     video_url: '',
     days_old: 0
   });
   const [activeTab, setActiveTab] = useState<'details' | 'faqs'>('details');
-  
+
   const parseDescriptionStringToBlocks = useCallback((description: string): ContentBlock[] => {
     if (!description) {
       return [{ id: 'text-initial-block', type: 'text', content: '' }];
@@ -64,7 +64,7 @@ const EditCampaignModal = ({ campaign, onClose, onSave }: EditCampaignModalProps
         return parsed;
       }
     } catch (e) { /* Not a valid JSON array, treat as plain text. */ }
-  
+
     return [{
       id: `text-initial-block`,
       type: 'text',
@@ -85,9 +85,9 @@ const EditCampaignModal = ({ campaign, onClose, onSave }: EditCampaignModalProps
     if (campaign) {
       const initialBlocks = parseDescriptionStringToBlocks(campaign.description);
       setDescriptionBlocks(initialBlocks);
-      
+
       const plainTextDesc = getPlainTextFromBlocks(initialBlocks);
-      
+
       setEditForm({
         title: campaign.title,
         short_description: campaign.short_description || plainTextDesc.substring(0, 150) || '',
@@ -110,22 +110,80 @@ const EditCampaignModal = ({ campaign, onClose, onSave }: EditCampaignModalProps
     }
   }, [campaign?.id, getPlainTextFromBlocks, parseDescriptionStringToBlocks]);
 
+  const parseVideoUrl = (url: string): { embedUrl: string; platform: string } | null => {
+    if (!url) return null;
+
+    // YouTube patterns
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const youtubeMatch = url.match(youtubeRegex);
+    if (youtubeMatch) {
+      return {
+        embedUrl: `https://www.youtube.com/embed/${youtubeMatch[1]}`,
+        platform: 'youtube'
+      };
+    }
+
+    // Vimeo patterns
+    const vimeoRegex = /(?:vimeo\.com\/)([0-9]+)/;
+    const vimeoMatch = url.match(vimeoRegex);
+    if (vimeoMatch) {
+      return {
+        embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}`,
+        platform: 'vimeo'
+      };
+    }
+
+    // Dailymotion patterns
+    const dailymotionRegex = /(?:dailymotion\.com\/video\/|dai\.ly\/)([a-zA-Z0-9]+)/;
+    const dailymotionMatch = url.match(dailymotionRegex);
+    if (dailymotionMatch) {
+      return {
+        embedUrl: `https://www.dailymotion.com/embed/video/${dailymotionMatch[1]}`,
+        platform: 'dailymotion'
+      };
+    }
+
+    // TikTok patterns (note: TikTok embeds have limitations)
+    const tiktokRegex = /(?:tiktok\.com\/.+\/video\/|vm\.tiktok\.com\/)([0-9]+)/;
+    const tiktokMatch = url.match(tiktokRegex);
+    if (tiktokMatch) {
+      return {
+        embedUrl: `https://www.tiktok.com/embed/v2/${tiktokMatch[1]}`,
+        platform: 'tiktok'
+      };
+    }
+
+    // Direct video file patterns
+    if (url.match(/\.(mp4|webm|ogg|mov|avi)$/i)) {
+      return {
+        embedUrl: url,
+        platform: 'direct'
+      };
+    }
+
+    // Fallback for other URLs
+    return {
+      embedUrl: url,
+      platform: 'unknown'
+    };
+  };
+
   const handleSave = async () => {
     if (!campaign) return;
     setFormError(null);
     if (!editForm.title.trim() || !editForm.category) {
-        setFormError('Title and Category are required.');
-        return;
+      setFormError('Title and Category are required.');
+      return;
     }
     setUploading(true);
-    
+
     try {
       let imageUrl = editForm.image;
       if (imageFile) {
         // Assume uploadImage function exists and works
         // imageUrl = await uploadImage(); 
       }
-      
+
       const descriptionString = JSON.stringify(descriptionBlocks);
 
       const updateData = {
@@ -138,9 +196,9 @@ const EditCampaignModal = ({ campaign, onClose, onSave }: EditCampaignModalProps
         .from('campaigns')
         .update(updateData)
         .eq('id', campaign.id);
-      
+
       if (error) throw error;
-      
+
       onSave({ ...campaign, ...updateData });
       onClose();
 
@@ -173,118 +231,179 @@ const EditCampaignModal = ({ campaign, onClose, onSave }: EditCampaignModalProps
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-gray-900">Edit Campaign</h3>
-                <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-6 h-6" /></button>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold text-gray-900">Edit Campaign</h3>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-6 h-6" /></button>
+          </div>
+          {formError && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">{formError}</div>}
+          <div className="mb-6 border-b border-gray-200">
+            <div className="flex space-x-8">
+              <button onClick={() => setActiveTab('details')} className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'details' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Campaign Details</button>
+              <button onClick={() => setActiveTab('faqs')} className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'faqs' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>FAQs</button>
             </div>
-            {formError && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">{formError}</div>}
-            <div className="mb-6 border-b border-gray-200">
-                <div className="flex space-x-8">
-                    <button onClick={() => setActiveTab('details')} className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'details' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Campaign Details</button>
-                    <button onClick={() => setActiveTab('faqs')} className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'faqs' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>FAQs</button>
+          </div>
+
+          {activeTab === 'details' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Campaign Title</label>
+                  <input type="text" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" />
                 </div>
-            </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                  <select value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <option value="">Select category</option>
+                    <option value="tech">Tech</option>
+                    <option value="home">Home</option>
+                    <option value="lifestyle">Lifestyle</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Short Description</label>
+                <textarea value={editForm.short_description} onChange={(e) => setEditForm({ ...editForm, short_description: e.target.value })} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg" maxLength={150} />
+                <p className="text-xs text-gray-500 mt-1">Max 150 characters.</p>
+              </div>
 
-            {activeTab === 'details' && (
-                <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Campaign Title</label>
-                            <input type="text" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg"/>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                            <select value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                                <option value="">Select category</option>
-                                <option value="tech">Tech</option>
-                                <option value="home">Home</option>
-                                <option value="lifestyle">Lifestyle</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Short Description</label>
-                        <textarea value={editForm.short_description} onChange={(e) => setEditForm({ ...editForm, short_description: e.target.value })} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg" maxLength={150}/>
-                        <p className="text-xs text-gray-500 mt-1">Max 150 characters.</p>
-                    </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Full Description</label>
+                <RichDescriptionEditor
+                  blocks={descriptionBlocks}
+                  onChange={setDescriptionBlocks}
+                />
+              </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Full Description</label>
-                        <RichDescriptionEditor
-                            blocks={descriptionBlocks}
-                            onChange={setDescriptionBlocks}
-                        />
-                    </div>
-                    
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Campaign Image</label>
-                        <div className="space-y-4">
-                        {imagePreview && <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-lg"/>}
-                        <input type="file" accept="image/*" onChange={handleImageChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0"/>
-                        </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Reservation Goal (coins)</label>
-                            <input type="number" value={editForm.reservation_goal} onChange={(e) => setEditForm({ ...editForm, reservation_goal: parseInt(e.target.value) || 1 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" min="1"/>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Estimated Retail Price ($)</label>
-                            <input type="number" step="0.01" value={editForm.estimated_retail_price} onChange={(e) => setEditForm({ ...editForm, estimated_retail_price: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" min="0.01"/>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Bid</label>
-                            <input type="number" value={editForm.minimum_bid} onChange={(e) => setEditForm({ ...editForm, minimum_bid: parseInt(e.target.value) || 1 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" min="1"/>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Days Active</label>
-                            <input type="number" value={editForm.days_old} onChange={(e) => setEditForm({ ...editForm, days_old: parseInt(e.target.value) || 0 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" min="0"/>
-                        </div>
-                    </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Campaign Image</label>
+                <div className="space-y-4">
+                  {imagePreview && <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-lg" />}
+                  <input type="file" accept="image/*" onChange={handleImageChange} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0" />
+                </div>
+              </div>
 
-                    <div className="space-y-4">
-                        <h4 className="text-lg font-medium text-gray-900">External Links</h4>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Kickstarter URL</label>
-                            <input type="url" value={editForm.kickstarter_url} onChange={(e) => setEditForm({ ...editForm, kickstarter_url: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="https://kickstarter.com/..."/>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Amazon URL</label>
-                            <input type="url" value={editForm.amazon_url} onChange={(e) => setEditForm({ ...editForm, amazon_url: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="https://amazon.com/..."/>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Website URL</label>
-                            <input type="url" value={editForm.website_url} onChange={(e) => setEditForm({ ...editForm, website_url: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="https://example.com/..."/>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Video URL</label>
-                            <div className="space-y-3">
-                                <input type="url" value={editForm.video_url} onChange={handleVideoUrlChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Enter a YouTube, Vimeo, or direct video URL..."/>
-                                <p className="text-xs text-gray-500">Enter a YouTube, Vimeo, or direct MP4/WebM video URL.</p>
-                                {videoPreview && (
-                                    <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden aspect-video">
-                                        {videoPreview.includes('youtube.com') || videoPreview.includes('youtu.be') ? (
-                                            <iframe src={videoPreview.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} title="Video preview" className="w-full h-full" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
-                                        ) : videoPreview.includes('vimeo.com') ? (
-                                            <iframe src={videoPreview.replace('vimeo.com', 'player.vimeo.com/video')} title="Video preview" className="w-full h-full" frameBorder="0" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen></iframe>
-                                        ) : videoPreview.match(/\.(mp4|webm|ogg)$/i) ? (
-                                            <video src={videoPreview} controls className="w-full h-full object-contain" preload="metadata">Your browser does not support the video tag.</video>
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center bg-gray-100 p-4"><p className="text-gray-500 text-sm">Video preview not available for this URL</p></div>
-                                        )}
-                                    </div>
-                                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Reservation Goal (coins)</label>
+                  <input type="number" value={editForm.reservation_goal} onChange={(e) => setEditForm({ ...editForm, reservation_goal: parseInt(e.target.value) || 1 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" min="1" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Estimated Retail Price ($)</label>
+                  <input type="number" step="0.01" value={editForm.estimated_retail_price} onChange={(e) => setEditForm({ ...editForm, estimated_retail_price: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" min="0.01" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Bid</label>
+                  <input type="number" value={editForm.minimum_bid} onChange={(e) => setEditForm({ ...editForm, minimum_bid: parseInt(e.target.value) || 1 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" min="1" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Days Active</label>
+                  <input type="number" value={editForm.days_old} onChange={(e) => setEditForm({ ...editForm, days_old: parseInt(e.target.value) || 0 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" min="0" />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="text-lg font-medium text-gray-900">External Links</h4>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Kickstarter URL</label>
+                  <input type="url" value={editForm.kickstarter_url} onChange={(e) => setEditForm({ ...editForm, kickstarter_url: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="https://kickstarter.com/..." />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Amazon URL</label>
+                  <input type="url" value={editForm.amazon_url} onChange={(e) => setEditForm({ ...editForm, amazon_url: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="https://amazon.com/..." />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Website URL</label>
+                  <input type="url" value={editForm.website_url} onChange={(e) => setEditForm({ ...editForm, website_url: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="https://example.com/..." />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Video URL</label>
+                  <div className="space-y-3">
+                    <input type="url" value={editForm.video_url} onChange={handleVideoUrlChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Enter video URL from YouTube, Vimeo, Dailymotion, TikTok, or direct video file..." />
+                    <p className="text-xs text-gray-500">Supports YouTube, Vimeo, Dailymotion, TikTok, and direct video file links.</p>
+                    {videoPreview && (
+                      <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden">
+                        {(() => {
+                          const parsedVideo = parseVideoUrl(videoPreview);
+                          if (!parsedVideo) return null;
+
+                          const { embedUrl, platform } = parsedVideo;
+
+                          if (platform === 'youtube' || platform === 'vimeo' || platform === 'dailymotion') {
+                            return (
+                              <div className="aspect-video">
+                                <iframe
+                                  src={embedUrl}
+                                  title="Video preview"
+                                  className="w-full h-full"
+                                  frameBorder="0"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                ></iframe>
+                              </div>
+                            );
+                          }
+
+                          if (platform === 'tiktok') {
+                            return (
+                              <div className="aspect-[9/16] max-w-[300px] mx-auto">
+                                <iframe
+                                  src={embedUrl}
+                                  title="TikTok video preview"
+                                  className="w-full h-full"
+                                  frameBorder="0"
+                                  allow="encrypted-media"
+                                  allowFullScreen
+                                ></iframe>
+                              </div>
+                            );
+                          }
+
+                          if (platform === 'direct') {
+                            return (
+                              <div className="aspect-auto max-h-[200px]">
+                                <video
+                                  src={embedUrl}
+                                  controls
+                                  className="w-full h-full object-contain"
+                                  preload="metadata"
+                                >
+                                  Your browser does not support the video tag.
+                                </video>
+                              </div>
+                            );
+                          }
+
+                          // Unknown platform fallback
+                          return (
+                            <div className="aspect-video">
+                              <div className="w-full h-full flex items-center justify-center bg-gray-100 p-4">
+                                <div className="text-center">
+                                  <p className="text-gray-500 text-sm mb-2">Preview not available for this video platform</p>
+                                  <a
+                                    href={videoPreview}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800 text-sm underline"
+                                  >
+                                    Open video in new tab
+                                  </a>
+                                </div>
+                              </div>
                             </div>
-                        </div>
-                    </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </div>
                 </div>
-            )}
-            {activeTab === 'faqs' && campaign && <FAQManager campaignId={campaign.id} />}
-            <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
-                <button onClick={onClose} className="px-6 py-2 text-gray-600" disabled={uploading}>Cancel</button>
-                <button onClick={handleSave} disabled={uploading} className="bg-primary text-white px-6 py-2 rounded-lg disabled:opacity-50 flex items-center space-x-2">{uploading && <Upload className="w-4 h-4 animate-spin" />}<span>{uploading ? 'Saving...' : 'Save Changes'}</span></button>
+              </div>
             </div>
+          )}
+          {activeTab === 'faqs' && campaign && <FAQManager campaignId={campaign.id} />}
+          <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+            <button onClick={onClose} className="px-6 py-2 text-gray-600" disabled={uploading}>Cancel</button>
+            <button onClick={handleSave} disabled={uploading} className="bg-primary text-white px-6 py-2 rounded-lg disabled:opacity-50 flex items-center space-x-2">{uploading && <Upload className="w-4 h-4 animate-spin" />}<span>{uploading ? 'Saving...' : 'Save Changes'}</span></button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import ProjectTabs from './Projects/ProjectTabs';
 import ProjectStats from './Projects/ProjectStats';
 import LiveVotingSection from './Projects/LiveVotingSection';
@@ -37,8 +38,8 @@ const Projects = () => {
   const [activeTab, setActiveTab] = useState<'live' | 'kickstarter' | 'launched' | 'archived'>('live');
   const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { error, handleError, clearError } = useErrorHandler();
 
   useEffect(() => {
     fetchCampaigns();
@@ -53,7 +54,7 @@ const Projects = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
+
       // Convert database campaigns to frontend format
       const convertedCampaigns = await Promise.all(
         (dbCampaigns || []).map(async (dbCampaign: DatabaseCampaign) => {
@@ -68,39 +69,46 @@ const Projects = () => {
           };
         })
       );
-      
+
       setCampaigns(convertedCampaigns);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      handleError(err, 'Failed to load projects');
     } finally {
       setLoading(false);
     }
   };
 
-  // Categorize campaigns
-  const liveCampaigns = campaigns.filter(c => !c.isArchived && c.status !== 'kickstarter' && c.status !== 'archived' && !c.amazonUrl && !c.websiteUrl);
-  const kickstarterCampaigns = campaigns.filter(c => c.status === 'kickstarter' || c.kickstarterUrl);
-  const launchedCampaigns = campaigns.filter(c => (c.amazonUrl || c.websiteUrl) && !c.isArchived);
-  const archivedCampaigns = campaigns.filter(c => c.isArchived);
+  // Memoized campaign categorization for performance
+  const categorizedCampaigns = useMemo(() => {
+    return {
+      live: campaigns.filter(c => !c.isArchived && c.status !== 'kickstarter' && c.status !== 'archived' && !c.amazonUrl && !c.websiteUrl),
+      kickstarter: campaigns.filter(c => c.status === 'kickstarter' || c.kickstarterUrl),
+      launched: campaigns.filter(c => (c.amazonUrl || c.websiteUrl) && !c.isArchived),
+      archived: campaigns.filter(c => c.isArchived)
+    };
+  }, [campaigns]);
+
+  const { live: liveCampaigns, kickstarter: kickstarterCampaigns, launched: launchedCampaigns, archived: archivedCampaigns } = categorizedCampaigns;
 
   const handleItemClick = (id: number) => {
     navigate(`/campaign/${id}`);
   };
 
-  // Calculate stats for ProjectStats component
-  const stats = {
+  // Memoized stats calculation for performance
+  const stats = useMemo(() => ({
     total: campaigns.length,
     supporters: campaigns.reduce((sum, c) => sum + (c.topBidders?.length || 0), 0),
     funded: kickstarterCampaigns.length + launchedCampaigns.length,
     success: campaigns.length > 0 ? Math.round(((kickstarterCampaigns.length + launchedCampaigns.length) / campaigns.length) * 100) : 0
-  };
+  }), [campaigns, kickstarterCampaigns.length, launchedCampaigns.length]);
 
-  const getTabCounts = () => ({
+  // Memoized tab counts for performance
+  const tabCounts = useMemo(() => ({
     live: liveCampaigns.length,
     kickstarter: kickstarterCampaigns.length,
     launched: launchedCampaigns.length,
     archived: archivedCampaigns.length
-  });
+  }), [liveCampaigns.length, kickstarterCampaigns.length, launchedCampaigns.length, archivedCampaigns.length]);
 
   if (loading) {
     return (
@@ -113,13 +121,16 @@ const Projects = () => {
     );
   }
 
-  if (error) {
+  if (error.isVisible && error.message) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">Error loading projects: {error}</p>
+          <p className="text-red-600 mb-4">Error loading projects: {error.message}</p>
           <button
-            onClick={fetchCampaigns}
+            onClick={() => {
+              clearError();
+              fetchCampaigns();
+            }}
             className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors"
           >
             Try Again
@@ -136,7 +147,7 @@ const Projects = () => {
         {/* Background gradient with subtle pattern */}
         <div className="absolute inset-0 bg-gradient-to-b from-gray-50 to-gray-100"></div>
         <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#3366FF_1px,transparent_1px)] [background-size:16px_16px]"></div>
-        
+
         {/* Content */}
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
           <div className="text-center">
@@ -148,7 +159,7 @@ const Projects = () => {
             </p>
           </div>
         </div>
-        
+
         {/* Decorative elements */}
         <div className="absolute -bottom-6 left-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
         <div className="absolute -top-24 right-1/4 w-72 h-72 bg-primary/10 rounded-full blur-3xl"></div>
@@ -159,10 +170,10 @@ const Projects = () => {
         <ProjectStats stats={stats} />
 
         {/* Tab Navigation */}
-        <ProjectTabs 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab} 
-          counts={getTabCounts()} 
+        <ProjectTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          counts={tabCounts}
         />
 
         {/* Tab Content */}
@@ -170,15 +181,15 @@ const Projects = () => {
           {activeTab === 'live' && (
             <LiveVotingSection filteredData={liveCampaigns} handleItemClick={handleItemClick} />
           )}
-          
+
           {activeTab === 'kickstarter' && (
             <LiveKickstarterSection filteredData={kickstarterCampaigns} handleItemClick={handleItemClick} />
           )}
-          
+
           {activeTab === 'launched' && (
             <LaunchedProductsSection filteredData={launchedCampaigns} handleItemClick={handleItemClick} />
           )}
-          
+
           {activeTab === 'archived' && (
             <ArchivedIdeasSection filteredData={archivedCampaigns} handleItemClick={handleItemClick} />
           )}

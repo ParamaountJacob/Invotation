@@ -1,6 +1,7 @@
-import React from 'react';
 import { Trophy, Medal, Award, Sparkles, Play } from 'lucide-react';
 import { useState, useRef } from 'react';
+import { videoLogger } from '../utils/logger';
+import { TIMING } from '../constants';
 
 type CampaignCardProps = {
   campaign: {
@@ -52,11 +53,11 @@ const getPositionColor = (position: number) => {
   }
 };
 
-const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
+const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const [isHovering, setIsHovering] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   const progressPercentage = Math.min(
     Math.round((campaign.currentReservations / (campaign.reservationGoal * campaign.minimumBid)) * 100),
     100
@@ -64,14 +65,14 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
 
   // Only show top 3 supporters
   const topThreeSupporers = campaign.topBidders.slice(0, 3);
-  
+
   // Get display description with proper truncation
   const getDisplayDescription = () => {
     // Use short_description if available
     if (campaign.short_description) {
       return campaign.short_description;
     }
-    
+
     // Otherwise try to extract from description
     try {
       if (typeof campaign.description === 'string' && campaign.description.startsWith('{')) {
@@ -83,9 +84,9 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
     } catch (e) {
       // Parsing failed, use description as is
     }
-    
+
     // Fallback to plain description with truncation
-    return typeof campaign.description === 'string' 
+    return typeof campaign.description === 'string'
       ? campaign.description.substring(0, 100) + (campaign.description.length > 100 ? '...' : '')
       : '';
   };
@@ -93,33 +94,33 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
   // Handle mouse enter - start playing video after a small delay
   const handleMouseEnter = () => {
     setIsHovering(true);
-    
+
     // Clear any existing timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    
+
     // Set a small delay before playing to avoid flickering on quick mouse movements
     timeoutRef.current = setTimeout(() => {
       if (videoRef.current && campaign.videoUrl) {
         videoRef.current.play().catch(err => {
           // Autoplay might be blocked by browser settings
-          console.log('Video autoplay failed:', err);
+          videoLogger.debug('Video autoplay failed:', err);
         });
       }
-    }, 150);
+    }, TIMING.VIDEO_HOVER_DELAY);
   };
 
   // Handle mouse leave - pause video
   const handleMouseLeave = () => {
     setIsHovering(false);
-    
+
     // Clear any pending timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    
+
     // Pause the video
     if (videoRef.current) {
       videoRef.current.pause();
@@ -138,7 +139,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
   }, []);
 
   return (
-    <div 
+    <div
       className="campaign-card bg-white rounded-xl overflow-hidden shadow-lg border border-gray-200 h-full flex flex-col group"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -148,8 +149,8 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
           <div className="w-full aspect-video relative">
             {campaign.videoUrl.includes('youtube.com') || campaign.videoUrl.includes('youtu.be') ? (
               <iframe
-                src={`${campaign.videoUrl.includes('youtube.com') 
-                  ? campaign.videoUrl.replace('watch?v=', 'embed/') 
+                src={`${campaign.videoUrl.includes('youtube.com')
+                  ? campaign.videoUrl.replace('watch?v=', 'embed/')
                   : campaign.videoUrl.replace('youtu.be/', 'youtube.com/embed/')}?autoplay=1&mute=1`}
                 title={campaign.title}
                 className="w-full h-full object-cover"
@@ -192,26 +193,26 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
             )}
           </div>
         )}
-        
+
         <div className="absolute top-4 right-4">
           <span className="text-xs font-bold uppercase px-3 py-1 rounded-full bg-white/90 text-gray-800 backdrop-blur-sm">
             {campaign.category}
           </span>
         </div>
-        
+
         <div className="absolute top-4 left-4">
           <div className="bg-primary text-white px-3 py-1 rounded-full text-xs font-bold">
             🔥 LIVE
           </div>
         </div>
       </div>
-      
+
       <div className="p-6 flex-1 flex flex-col">
         <h3 className="text-xl font-bold mb-3 text-gray-900 group-hover:text-primary transition-colors">{campaign.title}</h3>
         <p className="text-gray-600 mb-6 flex-1 leading-relaxed line-clamp-3">
           {getDisplayDescription()}
         </p>
-        
+
         {/* Top 3 Supporters Only */}
         <div className="mb-6 bg-gray-50 rounded-xl p-4 border border-gray-100">
           <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
@@ -238,7 +239,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
             ))}
           </div>
         </div>
-        
+
         {/* Support Info */}
         <div className="mb-6 bg-primary/5 rounded-xl p-4 border border-primary/20">
           <div className="flex justify-between items-center mb-3">
@@ -257,7 +258,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
             Everyone gets 20% off • More coins = bigger discount (up to 40% off!)
           </p>
         </div>
-        
+
         <div className="space-y-4 mt-auto">
           <div>
             <div className="flex justify-between text-sm mb-2">
@@ -271,9 +272,8 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3">
               <div
-                className={`h-3 rounded-full transition-all duration-500 ${
-                  campaign.status === 'goal_reached' ? 'bg-green-500' : 'bg-primary'
-                }`}
+                className={`h-3 rounded-full transition-all duration-500 ${campaign.status === 'goal_reached' ? 'bg-green-500' : 'bg-primary'
+                  }`}
                 style={{ width: `${progressPercentage}%` }}
               ></div>
             </div>
@@ -285,13 +285,13 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
               <span className="text-gray-500">{(campaign.reservationGoal * campaign.minimumBid) - campaign.currentReservations} coins needed</span>
             </div>
           </div>
-          
+
           <button className="btn-primary w-full flex justify-center items-center space-x-2 py-3">
             <span>
               {campaign.status === 'goal_reached' ? 'View Campaign' : 'Vote With Coins'}
             </span>
           </button>
-          
+
           {campaign.status === 'goal_reached' && campaign.goal_reached_at && (
             <div className="text-center">
               <p className="text-xs text-green-600 font-medium">

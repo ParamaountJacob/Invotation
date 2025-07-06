@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Stage } from '@react-three/drei';
 import { STLLoader } from 'three-stdlib';
@@ -48,7 +48,7 @@ const Model = ({ url, fileType, file }: { url: string; fileType: string; file?: 
       reader.readAsArrayBuffer(file);
     } else if (fileType === 'stl' && url) {
       const loader = new STLLoader();
-      
+
       fetch(url)
         .then((res) => res.arrayBuffer())
         .then((data) => {

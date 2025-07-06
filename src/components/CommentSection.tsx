@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { 
-  addComment, 
-  fetchCommentsForCampaign, 
+import {
+  addComment,
+  fetchCommentsForCampaign,
   addCommentReaction,
   removeCommentReaction,
   getUserReactionToComment,
@@ -10,6 +10,8 @@ import {
 } from '../lib/comments';
 import { CampaignComment } from '../types';
 import { ThumbsUp, ThumbsDown, MessageSquare, CornerDownRight, Trash2, Edit, X, AlertCircle, HelpCircle } from 'lucide-react';
+import { useErrorHandler } from '../hooks/useErrorHandler';
+import { ErrorDisplay } from './shared/ErrorDisplay';
 
 interface CommentSectionProps {
   campaignId: number;
@@ -21,7 +23,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
   const [comments, setComments] = useState<CampaignComment[]>([]);
   const [totalComments, setTotalComments] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { error, handleError, clearError, setError } = useErrorHandler();
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -31,6 +33,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
   const [userReactions, setUserReactions] = useState<Record<string, 'agree' | 'disagree' | null>>({});
   const [hasSupported, setHasSupported] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (campaignId) {
@@ -44,7 +47,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
       setHasSupported(false);
       return;
     }
-    
+
     const supported = await hasUserSupportedCampaign(currentUser.id, campaignId);
     setHasSupported(supported);
   };
@@ -52,26 +55,28 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
   const loadComments = async () => {
     try {
       setLoading(true);
+      clearError(); // Clear any previous errors
+
       const { comments, totalCount, error } = await fetchCommentsForCampaign(campaignId);
-      
+
       if (error) throw new Error(error);
-      
+
       setComments(comments);
       setTotalComments(totalCount);
-      
+
       // Load user reactions if user is logged in
       if (currentUser) {
         const reactions: Record<string, 'agree' | 'disagree' | null> = {};
-        
+
         await Promise.all(comments.map(async (comment) => {
           const { reactionType } = await getUserReactionToComment(comment.id, currentUser.id);
           reactions[comment.id] = reactionType || null;
         }));
-        
+
         setUserReactions(reactions);
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      handleError(err, 'Failed to load comments');
     } finally {
       setLoading(false);
     }
@@ -79,38 +84,38 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!currentUser) {
       setError('You must be signed in to comment');
       return;
     }
-    
+
     if (!hasSupported) {
       setError('You must support this campaign before commenting');
       return;
     }
-    
+
     if (!newComment.trim()) {
       setError('Comment cannot be empty');
       return;
     }
-    
+
     try {
       setSubmitting(true);
-      setError(null);
-      
+      clearError();
+
       const { success, error } = await addComment(
         campaignId,
         currentUser.id,
         newComment.trim()
       );
-      
+
       if (!success) throw new Error(error);
-      
+
       setNewComment('');
       await loadComments();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      handleError(err, 'Failed to post comment');
     } finally {
       setSubmitting(false);
     }
@@ -121,30 +126,30 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
       setError('You must be signed in to reply');
       return;
     }
-    
+
     if (!hasSupported) {
       setError('You must support this campaign before replying');
       return;
     }
-    
+
     if (!replyContent.trim()) {
       setError('Reply cannot be empty');
       return;
     }
-    
+
     try {
       setSubmitting(true);
       setError(null);
-      
+
       const { success, error } = await addComment(
         campaignId,
         currentUser.id,
         replyContent.trim(),
         parentId
       );
-      
+
       if (!success) throw new Error(error);
-      
+
       setReplyingTo(null);
       setReplyContent('');
       await loadComments();
@@ -160,22 +165,22 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
       setError('You must be signed in to edit');
       return;
     }
-    
+
     if (!editContent.trim()) {
       setError('Comment cannot be empty');
       return;
     }
-    
+
     try {
       setSubmitting(true);
       setError(null);
-      
+
       const { data: comment } = await supabase
         .from('campaign_comments')
         .update({ content: editContent.trim(), updated_at: new Date().toISOString() })
         .eq('id', commentId)
         .eq('user_id', currentUser.id);
-      
+
       setEditingId(null);
       setEditContent('');
       await loadComments();
@@ -191,22 +196,22 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
       setError('You must be signed in to delete');
       return;
     }
-    
+
     if (!window.confirm('Are you sure you want to delete this comment?')) {
       return;
     }
-    
+
     try {
       setError(null);
-      
+
       const { error } = await supabase
         .from('campaign_comments')
         .delete()
         .eq('id', commentId)
         .eq('user_id', currentUser.id);
-      
+
       if (error) throw error;
-      
+
       await loadComments();
     } catch (err: any) {
       setError(err.message);
@@ -218,15 +223,15 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
       setError('You must be signed in to react');
       return;
     }
-    
+
     if (!hasSupported) {
       setError('You must support this campaign before reacting');
       return;
     }
-    
+
     try {
       setError(null);
-      
+
       // If user already reacted with this type, remove the reaction
       if (userReactions[commentId] === reactionType) {
         await removeCommentReaction(commentId, currentUser.id);
@@ -238,12 +243,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
           currentUser.id,
           reactionType
         );
-        
+
         if (!success) throw new Error(error);
-        
+
         setUserReactions(prev => ({ ...prev, [commentId]: reactionType }));
       }
-      
+
       await loadComments();
     } catch (err: any) {
       setError(err.message);
@@ -270,6 +275,16 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
     setReplyContent('');
   };
 
+  const toggleReplies = (commentId: string) => {
+    const newExpandedReplies = new Set(expandedReplies);
+    if (newExpandedReplies.has(commentId)) {
+      newExpandedReplies.delete(commentId);
+    } else {
+      newExpandedReplies.add(commentId);
+    }
+    setExpandedReplies(newExpandedReplies);
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
       <div className="flex items-center justify-between mb-6">
@@ -279,7 +294,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
             Community Suggestions
           </h2>
           <div className="ml-2">
-            <button 
+            <button
               onClick={() => setShowInfoModal(true)}
               className="bg-primary/10 hover:bg-primary/20 text-primary px-2 py-1 md:px-3 md:py-1 rounded-lg text-xs md:text-sm font-medium transition-colors flex items-center"
               aria-label="How suggestions work"
@@ -305,6 +320,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
       {currentUser ? (
         hasSupported ? (
           <form onSubmit={handleSubmitComment} className="mb-6 md:mb-8">
+            <ErrorDisplay error={error} onClear={clearError} />
+
             <div className="mb-4">
               <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-1 md:mb-2">
                 Add Your Suggestion
@@ -366,8 +383,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
                   <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                     {comment.profile?.avatar_url ? (
                       <img
-                        src={comment.profile.avatar_url} 
-                        alt={comment.profile.full_name || 'User'} 
+                        src={comment.profile.avatar_url}
+                        alt={comment.profile.full_name || 'User'}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -381,28 +398,27 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
                       {comment.profile?.full_name || 'Anonymous'}
                     </p>
                     <p className="text-xs text-gray-500 flex flex-wrap items-center gap-1">
-                      {new Date(comment.created_at).toLocaleDateString()} • 
+                      {new Date(comment.created_at).toLocaleDateString()} •
                       <span className="font-medium text-primary">
                         {comment.author_coin_weight} coin{comment.author_coin_weight !== 1 ? 's' : ''} invested
                       </span>
                     </p>
                   </div>
                 </div>
-                
+
                 {/* Score Display */}
                 <div className="text-xs md:text-sm font-medium flex-shrink-0">
-                  <span className={`px-2 py-1 rounded ${
-                    comment.calculated_score > 0 
-                      ? 'bg-green-100 text-green-800' 
-                      : comment.calculated_score < 0
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span className={`px-2 py-1 rounded ${comment.calculated_score > 0
+                    ? 'bg-green-100 text-green-800'
+                    : comment.calculated_score < 0
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-gray-100 text-gray-800'
+                    }`}>
                     Score: {comment.calculated_score}
                   </span>
                 </div>
               </div>
-              
+
               {/* Comment Content */}
               {editingId === comment.id ? (
                 <div className="mb-3">
@@ -431,7 +447,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
               ) : (
                 <p className="text-gray-700 mb-3">{comment.content}</p>
               )}
-              
+
               {/* Comment Actions */}
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-1 md:gap-2">
@@ -439,50 +455,47 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
                   <button
                     onClick={() => handleReaction(comment.id, 'agree')}
                     disabled={!currentUser || !hasSupported}
-                    className={`flex items-center space-x-1 px-1.5 py-0.5 md:px-2 md:py-1 rounded text-xs md:text-sm ${
-                      userReactions[comment.id] === 'agree'
-                        ? 'bg-green-100 text-green-700'
-                        : 'text-gray-500 hover:text-gray-700'
-                    } ${(!currentUser || !hasSupported) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`flex items-center space-x-1 px-1.5 py-0.5 md:px-2 md:py-1 rounded text-xs md:text-sm ${userReactions[comment.id] === 'agree'
+                      ? 'bg-green-100 text-green-700'
+                      : 'text-gray-500 hover:text-gray-700'
+                      } ${(!currentUser || !hasSupported) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     title={!currentUser ? "Sign in to react" : !hasSupported ? "Support this campaign to react" : "Agree with this suggestion"}
                   >
                     <span className="font-medium whitespace-nowrap">Agree</span>
                     <span>{comment.agreeCount || 0}</span>
                   </button>
-                  
+
                   {/* Disagree Button */}
                   <button
                     onClick={() => handleReaction(comment.id, 'disagree')}
                     disabled={!currentUser || !hasSupported}
-                    className={`flex items-center space-x-1 px-1.5 py-0.5 md:px-2 md:py-1 rounded text-xs md:text-sm ${
-                      userReactions[comment.id] === 'disagree'
-                        ? 'bg-red-100 text-red-700'
-                        : 'text-gray-500 hover:text-gray-700'
-                    } ${(!currentUser || !hasSupported) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`flex items-center space-x-1 px-1.5 py-0.5 md:px-2 md:py-1 rounded text-xs md:text-sm ${userReactions[comment.id] === 'disagree'
+                      ? 'bg-red-100 text-red-700'
+                      : 'text-gray-500 hover:text-gray-700'
+                      } ${(!currentUser || !hasSupported) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     title={!currentUser ? "Sign in to react" : !hasSupported ? "Support this campaign to react" : "Disagree with this suggestion"}
                   >
                     <span className="font-medium whitespace-nowrap">Disagree</span>
                     <span>{comment.disagreeCount || 0}</span>
                   </button>
-                  
+
                   {/* Reply Button */}
                   <button
                     onClick={() => startReplying(comment.id)}
                     disabled={!currentUser || !hasSupported}
-                    className={`flex items-center space-x-1 text-gray-500 hover:text-gray-700 text-xs md:text-sm ${
-                      (!currentUser || !hasSupported) ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
+                    className={`flex items-center space-x-1 text-gray-500 hover:text-gray-700 text-xs md:text-sm ${(!currentUser || !hasSupported) ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                     title={!currentUser ? "Sign in to reply" : !hasSupported ? "Support this campaign to reply" : "Reply to this comment"}
                   >
                     <CornerDownRight className="w-3 h-3 md:w-4 md:h-4" />
                     <span className="whitespace-nowrap">Reply</span>
                   </button>
                 </div>
-                
+
                 {/* Edit/Delete (for comment owner) */}
                 {currentUser && comment.user_id === currentUser.id && (
                   <div className="flex items-center space-x-2">
-                    <button 
+                    <button
                       onClick={() => startEditing(comment)}
                       className="text-gray-500 hover:text-gray-700 p-1"
                       title="Edit your comment"
@@ -499,7 +512,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
                   </div>
                 )}
               </div>
-              
+
               {/* Reply Form */}
               {replyingTo === comment.id && (
                 <div className="mt-4 pl-4 border-l-2 border-gray-200">
@@ -527,22 +540,58 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
                   </div>
                 </div>
               )}
-              
+
               {/* Show Reply Count */}
               {comment.replyCount > 0 && (
                 <button
                   className="mt-2 text-xs md:text-sm text-primary hover:text-primary-dark flex items-center"
-                  onClick={() => {/* TODO: Implement viewing replies */}}
+                  onClick={() => toggleReplies(comment.id)}
                 >
                   <MessageSquare className="w-3 h-3 md:w-4 md:h-4 mr-1" />
-                  View {comment.replyCount} {comment.replyCount === 1 ? 'reply' : 'replies'}
+                  {expandedReplies.has(comment.id) ? 'Hide' : 'View'} {comment.replyCount} {comment.replyCount === 1 ? 'reply' : 'replies'}
                 </button>
+              )}
+
+              {/* Display Replies */}
+              {expandedReplies.has(comment.id) && comment.replies && comment.replies.length > 0 && (
+                <div className="mt-4 pl-4 border-l-2 border-gray-200 space-y-3">
+                  {comment.replies.map((reply) => (
+                    <div key={reply.id} className="bg-gray-50 rounded-lg p-3">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {reply.profile?.avatar_url ? (
+                            <img
+                              src={reply.profile.avatar_url}
+                              alt={reply.profile.full_name || 'User'}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-gray-500 font-bold text-sm">
+                              {reply.profile?.full_name?.charAt(0) || reply.profile?.email?.charAt(0) || '?'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <p className="font-medium text-gray-900 text-sm">
+                              {reply.profile?.full_name || 'Anonymous'}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(reply.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <p className="text-gray-700 text-sm">{reply.content}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           ))}
         </div>
       )}
-      
+
       {/* How Suggestions Work Modal */}
       {showInfoModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
@@ -556,7 +605,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="space-y-6">
               <div className="bg-blue-50 rounded-xl p-3 md:p-5 border border-blue-200">
                 <h3 className="font-bold text-blue-900 mb-2 md:mb-3 text-base md:text-lg">Example</h3>
@@ -582,7 +631,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
                   Higher scores mean the community strongly supports the suggestion!
                 </p>
               </div>
-              
+
               <div>
                 <h3 className="font-bold mb-2 md:mb-3 text-base md:text-lg">How It Works</h3>
                 <ul className="space-y-2 md:space-y-3 text-gray-700 text-sm md:text-base">
@@ -601,9 +650,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({ campaignId, currentUser
                 </ul>
               </div>
             </div>
-            
+
             <div className="mt-6 pt-4 border-t border-gray-200 flex justify-end">
-              <button 
+              <button
                 onClick={() => setShowInfoModal(false)}
                 className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors"
               >

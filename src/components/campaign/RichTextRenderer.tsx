@@ -8,10 +8,12 @@ export interface TextBlock {
 }
 
 export interface ImageBlock {
-  id:string;
+  id: string;
   type: 'image';
   url: string;
   width: number;
+  alt?: string;
+  caption?: string;
 }
 
 export type ContentBlock = TextBlock | ImageBlock;
@@ -39,17 +41,22 @@ const RichTextRenderer: React.FC<RichTextRendererProps> = ({ blocks }) => {
                 {block.content}
               </p>
             );
-          
+
           case 'image':
             // Render image blocks, respecting the width property.
             return (
-              <div key={block.id} className="flex justify-center my-6">
-                <img 
-                  src={block.url} 
-                  alt="Campaign content" 
+              <div key={block.id} className="flex flex-col items-center my-6">
+                <img
+                  src={block.url}
+                  alt={block.alt || 'Campaign content'}
                   className="rounded-lg shadow-md border"
                   style={{ width: `${block.width || 100}%` }} // Default to 100% width
                 />
+                {block.caption && (
+                  <p className="text-sm text-gray-600 mt-2 text-center italic">
+                    {block.caption}
+                  </p>
+                )}
               </div>
             );
 

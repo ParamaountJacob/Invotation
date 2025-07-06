@@ -1,17 +1,21 @@
 import { useState } from 'react';
-import { User, Calendar, DollarSign } from 'lucide-react';
+import { User, Calendar, DollarSign, CheckCircle, AlertCircle, XCircle, MessageSquare } from 'lucide-react';
 import { Submission, Profile } from '../../types';
 import StatusBadge from '../../components/shared/StatusBadge';
+import SubmissionUpdateModal from '../../components/SubmissionUpdateModal';
 
 interface SubmissionReviewProps {
   submissions: (Submission & { profile: Profile })[];
   onSubmissionClick: (submission: Submission & { profile: Profile }) => void;
   onStatusUpdate: (submissionId: string, status: string) => void;
+  onRefreshData: () => void;
 }
 
-const SubmissionReview = ({ submissions, onSubmissionClick, onStatusUpdate }: SubmissionReviewProps) => {
+const SubmissionReview = ({ submissions, onSubmissionClick, onStatusUpdate, onRefreshData }: SubmissionReviewProps) => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSubmission, setSelectedSubmission] = useState<(Submission & { profile: Profile }) | null>(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
 
   const filteredSubmissions = submissions.filter(submission => {
     const matchesSearch = submission.idea_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -22,6 +26,20 @@ const SubmissionReview = ({ submissions, onSubmissionClick, onStatusUpdate }: Su
 
     return matchesSearch && matchesStatus;
   });
+
+  const handleOpenUpdateModal = (submission: Submission & { profile: Profile }) => {
+    setSelectedSubmission(submission);
+    setShowUpdateModal(true);
+  };
+
+  const handleCloseUpdateModal = () => {
+    setShowUpdateModal(false);
+    setSelectedSubmission(null);
+  };
+
+  const handleUpdateComplete = () => {
+    onRefreshData();
+  };
 
   return (
     <div className="space-y-6">
@@ -119,6 +137,15 @@ const SubmissionReview = ({ submissions, onSubmissionClick, onStatusUpdate }: Su
               >
                 View Details
               </button>
+              <button
+                onClick={() => handleOpenUpdateModal(submission)}
+                className="px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-md border border-purple-200 transition-colors"
+              >
+                <div className="flex items-center space-x-2">
+                  <MessageSquare size={16} />
+                  <span>Manage Updates</span>
+                </div>
+              </button>
             </div>
           </div>
         ))}
@@ -133,6 +160,16 @@ const SubmissionReview = ({ submissions, onSubmissionClick, onStatusUpdate }: Su
           </div>
         )}
       </div>
+
+      {/* Submission Update Modal */}
+      {selectedSubmission && (
+        <SubmissionUpdateModal
+          isOpen={showUpdateModal}
+          onClose={handleCloseUpdateModal}
+          submission={selectedSubmission}
+          onUpdateComplete={handleUpdateComplete}
+        />
+      )}
     </div>
   );
 };

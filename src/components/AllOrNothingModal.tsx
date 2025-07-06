@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, Info, CheckCircle, RefreshCcw, Shield } from 'lucide-react';
 
 interface AllOrNothingModalProps {
@@ -6,7 +5,7 @@ interface AllOrNothingModalProps {
   onClose: () => void;
 }
 
-const AllOrNothingModal: React.FC<AllOrNothingModalProps> = ({ isOpen, onClose }) => {
+const AllOrNothingModal = ({ isOpen, onClose }: AllOrNothingModalProps) => {
   if (!isOpen) return null;
 
   return (
@@ -24,7 +23,7 @@ const AllOrNothingModal: React.FC<AllOrNothingModalProps> = ({ isOpen, onClose }
             <X size={24} />
           </button>
         </div>
-        
+
         <div className="space-y-6">
           <p className="text-lg text-gray-700 mb-6">
             Invotation takes ideas from concept to reality through a structured development process. Your support helps validate market interest and fund initial development.
@@ -44,7 +43,7 @@ const AllOrNothingModal: React.FC<AllOrNothingModalProps> = ({ isOpen, onClose }
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200 shadow-sm">
               <div className="flex items-start space-x-3 mb-4">
                 <div className="bg-green-100 rounded-full p-1 flex-shrink-0">
@@ -96,7 +95,7 @@ const AllOrNothingModal: React.FC<AllOrNothingModalProps> = ({ isOpen, onClose }
               </div>
             </div>
           </div>
-          
+
           <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200 shadow-sm">
             <div className="flex items-start space-x-3">
               <Shield className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
@@ -123,7 +122,7 @@ const AllOrNothingModal: React.FC<AllOrNothingModalProps> = ({ isOpen, onClose }
             </div>
           </div>
         </div>
-        
+
         <div className="mt-8 pt-4 border-t border-gray-200">
           <button
             onClick={onClose}

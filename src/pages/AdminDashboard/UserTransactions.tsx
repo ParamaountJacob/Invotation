@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Calendar, DollarSign, ArrowUp, ArrowDown, Search, Filter } from 'lucide-react';
 
@@ -33,7 +33,7 @@ const UserTransactions: React.FC<UserTransactionsProps> = ({ userId }) => {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
-      
+
       const { data, error } = await supabase
         .from('coin_transactions')
         .select(`
@@ -42,9 +42,9 @@ const UserTransactions: React.FC<UserTransactionsProps> = ({ userId }) => {
         `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
-      
+
       setTransactions(data || []);
     } catch (err: any) {
       setError(err.message);
@@ -80,7 +80,7 @@ const UserTransactions: React.FC<UserTransactionsProps> = ({ userId }) => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h3 className="text-xl font-bold">Coin Transaction History</h3>
-        
+
         <div className="flex gap-2">
           <select
             value={filterType}
@@ -95,7 +95,7 @@ const UserTransactions: React.FC<UserTransactionsProps> = ({ userId }) => {
             <option value="purchase">Purchases</option>
             <option value="support">Campaign Support</option>
           </select>
-          
+
           <button
             onClick={fetchTransactions}
             className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
@@ -110,13 +110,13 @@ const UserTransactions: React.FC<UserTransactionsProps> = ({ userId }) => {
           </button>
         </div>
       </div>
-      
+
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
           {error}
         </div>
       )}
-      
+
       {loading ? (
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -163,18 +163,16 @@ const UserTransactions: React.FC<UserTransactionsProps> = ({ userId }) => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        transaction.amount > 0 
-                          ? 'bg-green-100 text-green-800' 
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${transaction.amount > 0
+                          ? 'bg-green-100 text-green-800'
                           : 'bg-red-100 text-red-800'
-                      }`}>
+                        }`}>
                         {getOperationTypeLabel(transaction.operation_type)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={`flex items-center font-medium ${
-                        transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
+                      <div className={`flex items-center font-medium ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
                         {transaction.amount > 0 ? (
                           <ArrowUp className="w-4 h-4 mr-1" />
                         ) : (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ArrowRight, AlertCircle, X, Check, Info } from 'lucide-react';
 import PositionIcon from '../shared/PositionIcon';
 

@@ -51,21 +51,19 @@ export interface Campaign {
   projectUrl: string;
   minimumBid: number;
   topBidders: CampaignSupporter[];
-  status?: string;
+  status: string;
   goal_reached_at?: string;
   kickstarterUrl?: string;
   amazonUrl?: string;
   websiteUrl?: string;
   videoUrl?: string;
-  videoUrl?: string;
   isArchived: boolean;
-  status: string;
 }
 
 export function convertCampaignToFrontend(dbCampaign: DatabaseCampaign, topBidders: CampaignSupporter[]): Campaign {
   // Calculate total coins spent by all supporters
   const totalCoinsSpent = topBidders.reduce((sum, supporter) => sum + supporter.coins_spent, 0);
-  
+
   // Create a short description if one doesn't exist
   let shortDescription = dbCampaign.short_description;
   if (!shortDescription) {
@@ -350,7 +348,7 @@ export async function recalculateCampaignData(campaignId: number): Promise<void>
   } catch (error) {
     console.error('Error in recalculateCampaignData:', error);
   }
-  
+
   // Check if campaign has reached its goal
   try {
     const { data: campaign } = await supabase
@@ -358,17 +356,17 @@ export async function recalculateCampaignData(campaignId: number): Promise<void>
       .select('current_reservations, reservation_goal, status, goal_reached_at')
       .eq('id', campaignId)
       .single();
-    
-    if (campaign && campaign.current_reservations >= campaign.reservation_goal && 
-        campaign.status !== 'goal_reached' && 
-        campaign.status !== 'kickstarter' && 
-        campaign.status !== 'archived' && 
-        !campaign.goal_reached_at) {
-      
+
+    if (campaign && campaign.current_reservations >= campaign.reservation_goal &&
+      campaign.status !== 'goal_reached' &&
+      campaign.status !== 'kickstarter' &&
+      campaign.status !== 'archived' &&
+      !campaign.goal_reached_at) {
+
       // Update campaign status to goal_reached and set goal_reached_at timestamp
       await supabase
         .from('campaigns')
-        .update({ 
+        .update({
           status: 'goal_reached',
           goal_reached_at: new Date().toISOString()
         })

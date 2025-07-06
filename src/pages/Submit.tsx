@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { Upload, AlertCircle, X, Check, Box as Box3d, Lightbulb, Pencil, Plus, Image } from 'lucide-react';
 import ModelViewer from '../components/ModelViewer';
 import SubmissionTipsModal from '../components/SubmissionTipsModal';
+import AuthModal from '../components/Header/AuthModal';
 
 // Simple schema for the submission form
 const submissionSchema = z.object({
@@ -34,15 +35,13 @@ const Submit = () => {
   const [success, setSuccess] = useState(false);
   const [user, setUser] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
   const [imageFiles, setImageFiles] = useState<{ file: File; preview: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [modelFiles, setModelFiles] = useState<{ file: File; id: string }[]>([]);
   const modelInputRef = useRef<HTMLInputElement>(null);
   const [showTipsModal, setShowTipsModal] = useState(false);
-  
+  const [pendingSubmissionData, setPendingSubmissionData] = useState<any>(null);
+
   const { register, handleSubmit, formState: { errors }, reset } = useForm({
     resolver: zodResolver(submissionSchema),
     defaultValues: {
@@ -62,49 +61,18 @@ const Submit = () => {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      const newUser = session?.user ?? null;
+      setUser(newUser);
+
+      // If user just authenticated and we have pending submission data, retry submission
+      if (newUser && pendingSubmissionData) {
+        handleActualSubmission(pendingSubmissionData);
+        setPendingSubmissionData(null);
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) throw error;
-      setShowAuthModal(false);
-      setEmail('');
-      setPassword('');
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password
-      });
-      
-      if (error) throw error;
-      setShowAuthModal(false);
-      setEmail('');
-      setPassword('');
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
+  }, [pendingSubmissionData]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -141,7 +109,19 @@ const Submit = () => {
 
   const onSubmit = async (data: any) => {
     if (!user) {
+      // Store the form data for later submission after auth
+      setPendingSubmissionData(data);
       setShowAuthModal(true);
+      return;
+    }
+
+    // User is authenticated, proceed with submission
+    await handleActualSubmission(data);
+  };
+
+  const handleActualSubmission = async (data: any) => {
+    if (!user) {
+      setError('Authentication required');
       return;
     }
 
@@ -182,7 +162,7 @@ const Submit = () => {
             .upload(filePath, file)
             .then(async ({ error: uploadError }) => {
               if (uploadError) throw uploadError;
-              
+
               await supabase.from('submission_files').insert({
                 submission_id: submission.id,
                 file_name: file.name,
@@ -206,7 +186,7 @@ const Submit = () => {
             .upload(filePath, file)
             .then(async ({ error: uploadError }) => {
               if (uploadError) throw uploadError;
-              
+
               await supabase.from('submission_files').insert({
                 submission_id: submission.id,
                 file_name: file.name,
@@ -223,12 +203,13 @@ const Submit = () => {
 
       // Show success message
       setSuccess(true);
-      
-      // Reset form
+
+      // Reset form and clear pending data
       reset();
       setImageFiles([]);
       setModelFiles([]);
-      
+      setPendingSubmissionData(null);
+
       // Redirect after a delay
       setTimeout(() => {
         navigate('/dashboard');
@@ -278,9 +259,16 @@ const Submit = () => {
               {!user && (
                 <div className="bg-primary/10 p-4 border-b border-primary/20">
                   <div className="flex items-center justify-between">
-                    <p className="text-primary font-medium">
-                      Sign in to save and track your submissions
-                    </p>
+                    <div>
+                      <p className="text-primary font-medium">
+                        Sign in to save and track your submissions
+                      </p>
+                      {pendingSubmissionData && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          Your form data is saved and will be submitted after sign in
+                        </p>
+                      )}
+                    </div>
                     <button
                       onClick={() => setShowAuthModal(true)}
                       className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
@@ -416,14 +404,14 @@ const Submit = () => {
                       <span className="text-2xl mr-2">✏️</span>
                       Sketches or Images (Optional)
                     </label>
-                    
+
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
                       {/* Existing Images */}
                       {imageFiles.map((file, index) => (
                         <div key={index} className="relative group">
                           <div className="aspect-square rounded-lg overflow-hidden border border-gray-200">
-                            <img 
-                              src={file.preview} 
+                            <img
+                              src={file.preview}
                               alt={`Upload ${index + 1}`}
                               className="w-full h-full object-cover"
                             />
@@ -437,7 +425,7 @@ const Submit = () => {
                           </button>
                         </div>
                       ))}
-                      
+
                       {/* Add Image Button */}
                       <button
                         type="button"
@@ -456,7 +444,7 @@ const Submit = () => {
                         />
                       </button>
                     </div>
-                    
+
                     <p className="text-sm text-gray-500 mt-2">
                       Upload sketches, diagrams, or any images that help explain your idea. Don't worry if you don't have any - a simple description is enough!
                     </p>
@@ -468,7 +456,7 @@ const Submit = () => {
                       <span className="text-2xl mr-2">🧩</span>
                       3D Models (Optional)
                     </label>
-                    
+
                     <div className="space-y-4">
                       {/* Existing Models */}
                       {modelFiles.map((model) => (
@@ -489,7 +477,7 @@ const Submit = () => {
                           </button>
                         </div>
                       ))}
-                      
+
                       {/* Add Model Button */}
                       <button
                         type="button"
@@ -520,8 +508,8 @@ const Submit = () => {
                         className="mt-1.5"
                       />
                       <label htmlFor="terms_accepted" className="text-gray-700">
-                        I understand that if Invotation selects my idea, we'll partner together with me receiving 
-                        ongoing profit share (typically 10-20%) from all sales. If not selected, I keep all rights. 
+                        I understand that if Invotation selects my idea, we'll partner together with me receiving
+                        ongoing profit share (typically 10-20%) from all sales. If not selected, I keep all rights.
                         This is my original idea and I have the right to submit it.
                       </label>
                     </div>
@@ -559,7 +547,7 @@ const Submit = () => {
               Don't worry about perfection - we're here to help develop your idea!
             </p>
             <div className="flex justify-center space-x-6">
-              <button 
+              <button
                 onClick={() => setShowTipsModal(true)}
                 className="text-primary hover:text-primary-dark flex items-center"
               >
@@ -576,79 +564,23 @@ const Submit = () => {
       </div>
 
       {/* Submission Tips Modal */}
-      <SubmissionTipsModal 
+      <SubmissionTipsModal
         isOpen={showTipsModal}
         onClose={() => setShowTipsModal(false)}
       />
-      
+
       {/* Auth Modal */}
-      {showAuthModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">
-                {isSignUp ? 'Create Account' : 'Sign In'}
-              </h2>
-              <button
-                onClick={() => setShowAuthModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-                {error}
-              </div>
-            )}
-            
-            <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                  required
-                />
-              </div>
-              
-              <button
-                type="submit"
-                className="w-full btn-primary py-2"
-              >
-                {isSignUp ? 'Create Account' : 'Sign In'}
-              </button>
-            </form>
-            
-            <div className="mt-4 text-center">
-              <button
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="text-primary hover:text-primary-dark text-sm"
-              >
-                {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AuthModal
+        showAuthModal={showAuthModal}
+        setShowAuthModal={setShowAuthModal}
+        onSuccess={() => {
+          // Re-submit form after successful authentication
+          if (pendingSubmissionData) {
+            onSubmit(pendingSubmissionData);
+            setPendingSubmissionData(null);
+          }
+        }}
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Send, User, MessageSquare, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Profile, Message } from '../types';
@@ -15,11 +15,11 @@ interface MessageWithProfile extends Message {
   toProfile?: Profile;
 }
 
-const MessagingModal: React.FC<MessagingModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  selectedUserId, 
-  currentUser 
+const MessagingModal: React.FC<MessagingModalProps> = ({
+  isOpen,
+  onClose,
+  selectedUserId,
+  currentUser
 }) => {
   const [users, setUsers] = useState<Profile[]>([]);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
@@ -54,14 +54,14 @@ const MessagingModal: React.FC<MessagingModalProps> = ({
 
   const checkIfAdmin = async () => {
     if (!currentUser) return;
-    
+
     try {
       const { data } = await supabase
         .from('profiles')
         .select('is_admin')
         .eq('id', currentUser.id)
         .single();
-      
+
       setIsAdmin(data?.is_admin || false);
     } catch (error) {
       console.error('Error checking admin status:', error);
@@ -92,9 +92,6 @@ const MessagingModal: React.FC<MessagingModalProps> = ({
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles');
-      
       // If current user is admin, get all users
       // If current user is not admin, only get admin users
       if (isAdmin) {
@@ -102,9 +99,9 @@ const MessagingModal: React.FC<MessagingModalProps> = ({
           .from('profiles')
           .select('*')
           .order('full_name', { ascending: true });
-        
+
         if (error) throw error;
-        
+
         // Filter out current user
         const filteredUsers = (data || []).filter(user => user.id !== currentUser?.id);
         setUsers(filteredUsers);
@@ -115,9 +112,9 @@ const MessagingModal: React.FC<MessagingModalProps> = ({
           .select('*')
           .eq('is_admin', true)
           .order('full_name', { ascending: true });
-        
+
         if (error) throw error;
-        
+
         // Filter out current user (in case they're an admin)
         const filteredUsers = (data || []).filter(user => user.id !== currentUser?.id);
         setUsers(filteredUsers);
@@ -201,7 +198,7 @@ const MessagingModal: React.FC<MessagingModalProps> = ({
     }
   };
 
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = users.filter(user =>
     user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -223,7 +220,7 @@ const MessagingModal: React.FC<MessagingModalProps> = ({
                 <X className="w-6 h-6" />
               </button>
             </div>
-            
+
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
@@ -235,7 +232,7 @@ const MessagingModal: React.FC<MessagingModalProps> = ({
               />
             </div>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto">
             {filteredUsers.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
@@ -253,9 +250,8 @@ const MessagingModal: React.FC<MessagingModalProps> = ({
                   <li key={user.id}>
                     <button
                       onClick={() => setSelectedUser(user)}
-                      className={`w-full text-left px-6 py-4 hover:bg-gray-50 transition-colors flex items-center space-x-3 ${
-                        selectedUser?.id === user.id ? 'bg-primary/5 border-l-4 border-primary' : ''
-                      }`}
+                      className={`w-full text-left px-6 py-4 hover:bg-gray-50 transition-colors flex items-center space-x-3 ${selectedUser?.id === user.id ? 'bg-primary/5 border-l-4 border-primary' : ''
+                        }`}
                     >
                       <div className="flex-shrink-0">
                         {user.avatar_url ? (
@@ -288,7 +284,7 @@ const MessagingModal: React.FC<MessagingModalProps> = ({
             )}
           </div>
         </div>
-        
+
         {/* Chat Area */}
         <div className="flex-1 flex flex-col">
           {selectedUser ? (
@@ -315,7 +311,7 @@ const MessagingModal: React.FC<MessagingModalProps> = ({
                   <p className="text-sm text-gray-500">{selectedUser.email}</p>
                 </div>
               </div>
-              
+
               {/* Messages */}
               <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
                 {loading ? (
@@ -333,24 +329,21 @@ const MessagingModal: React.FC<MessagingModalProps> = ({
                     {messages.map((message) => (
                       <div
                         key={message.id}
-                        className={`flex ${
-                          message.from_user_id === currentUser?.id ? 'justify-end' : 'justify-start'
-                        }`}
+                        className={`flex ${message.from_user_id === currentUser?.id ? 'justify-end' : 'justify-start'
+                          }`}
                       >
                         <div
-                          className={`max-w-[70%] rounded-2xl px-4 py-3 ${
-                            message.from_user_id === currentUser?.id
-                              ? 'bg-primary text-white rounded-tr-none'
-                              : 'bg-white text-gray-800 rounded-tl-none border border-gray-200'
-                          }`}
+                          className={`max-w-[70%] rounded-2xl px-4 py-3 ${message.from_user_id === currentUser?.id
+                            ? 'bg-primary text-white rounded-tr-none'
+                            : 'bg-white text-gray-800 rounded-tl-none border border-gray-200'
+                            }`}
                         >
                           <p className="text-sm">{message.content}</p>
                           <p
-                            className={`text-xs mt-1 ${
-                              message.from_user_id === currentUser?.id
-                                ? 'text-primary-light'
-                                : 'text-gray-500'
-                            }`}
+                            className={`text-xs mt-1 ${message.from_user_id === currentUser?.id
+                              ? 'text-primary-light'
+                              : 'text-gray-500'
+                              }`}
                           >
                             {new Date(message.created_at).toLocaleTimeString([], {
                               hour: '2-digit',
@@ -364,7 +357,7 @@ const MessagingModal: React.FC<MessagingModalProps> = ({
                   </div>
                 )}
               </div>
-              
+
               {/* Message Input */}
               <div className="p-4 border-t border-gray-200 bg-white">
                 <div className="flex items-end space-x-2">

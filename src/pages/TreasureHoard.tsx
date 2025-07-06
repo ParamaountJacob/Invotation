@@ -7,6 +7,7 @@ import { Sword, Trophy, Plus, ArrowLeft } from 'lucide-react';
 import CompletionPlaque from '../components/CompletionPlaque';
 import { useCoin } from '../context/CoinContext';
 import StatusBadge from '../components/shared/StatusBadge';
+import { TIMING } from '../constants';
 
 // Cache for treasure hoard data
 let treasureCache: {
@@ -14,8 +15,6 @@ let treasureCache: {
   submissions: Submission[];
   lastFetch: number;
 } | null = null;
-
-const CACHE_DURATION = 30000; // 30 seconds
 
 const TreasureHoard = () => {
   const navigate = useNavigate();

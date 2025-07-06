@@ -1,12 +1,13 @@
 // Campaign pre-caching system
 import { fetchCampaigns, convertCampaignToFrontend, fetchCampaignSupporters } from './campaigns';
+import { LIMITS } from '../constants';
 
 class CampaignCache {
   private cache: Map<string, any> = new Map();
   private isPreloading = false;
   private preloadPromise: Promise<void> | null = null;
 
-  // Pre-cache the first 6 campaigns immediately
+  // Pre-cache the first campaigns immediately
   async preloadCampaigns(): Promise<void> {
     if (this.isPreloading || this.preloadPromise) {
       return this.preloadPromise || Promise.resolve();
@@ -14,7 +15,7 @@ class CampaignCache {
 
     this.isPreloading = true;
     this.preloadPromise = this.performPreload();
-    
+
     try {
       await this.preloadPromise;
     } finally {
@@ -25,9 +26,9 @@ class CampaignCache {
   private async performPreload(): Promise<void> {
     try {
       const dbCampaigns = await fetchCampaigns(false);
-      
-      // Pre-cache first 6 campaigns with their supporters
-      const preloadPromises = dbCampaigns.slice(0, 6).map(async (dbCampaign) => {
+
+      // Pre-cache first campaigns with their supporters
+      const preloadPromises = dbCampaigns.slice(0, LIMITS.PRELOAD_CAMPAIGNS_COUNT).map(async (dbCampaign) => {
         const supporters = await fetchCampaignSupporters(dbCampaign.id);
         const convertedCampaign = convertCampaignToFrontend(dbCampaign, supporters);
         this.cache.set(`campaign-${dbCampaign.id}`, convertedCampaign);
@@ -35,13 +36,13 @@ class CampaignCache {
       });
 
       const preloadedCampaigns = await Promise.all(preloadPromises);
-      
+
       // Cache the full list
       this.cache.set('campaigns-active', preloadedCampaigns);
-      
+
       // Load remaining campaigns in background
-      if (dbCampaigns.length > 6) {
-        this.loadRemainingCampaigns(dbCampaigns.slice(6));
+      if (dbCampaigns.length > LIMITS.PRELOAD_CAMPAIGNS_COUNT) {
+        this.loadRemainingCampaigns(dbCampaigns.slice(LIMITS.PRELOAD_CAMPAIGNS_COUNT));
       }
     } catch (error) {
       console.error('Error preloading campaigns:', error);
@@ -58,7 +59,7 @@ class CampaignCache {
       });
 
       const remainingConverted = await Promise.all(remainingPromises);
-      
+
       // Update the full campaigns list
       const preloaded = this.cache.get('campaigns-active') || [];
       this.cache.set('campaigns-active', [...preloaded, ...remainingConverted]);
@@ -84,7 +85,7 @@ class CampaignCache {
   // Update a specific campaign in cache
   updateCampaignInCache(campaignId: number, updatedCampaign: any): void {
     this.cache.set(`campaign-${campaignId}`, updatedCampaign);
-    
+
     // Update in the campaigns list too
     const campaigns = this.cache.get('campaigns-active');
     if (campaigns) {

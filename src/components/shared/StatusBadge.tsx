@@ -1,5 +1,5 @@
-import React from 'react';
 import { Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { memo } from 'react';
 import { SubmissionStatus } from '../../constants/submissionStatus';
 
 interface StatusBadgeProps {
@@ -58,7 +58,7 @@ const sizeClasses = {
     },
 } as const;
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({
+export const StatusBadge = memo<StatusBadgeProps>(({
     status,
     size = 'md',
     showIcon = true,
@@ -82,6 +82,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
             <span>{status}</span>
         </div>
     );
-};
+});
+
+StatusBadge.displayName = 'StatusBadge';
 
 export default StatusBadge;

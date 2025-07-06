@@ -5,12 +5,11 @@ import { useState, useEffect } from 'react';
 import { Submission, Profile } from '../types';
 import SubmissionTipsModal from '../components/SubmissionTipsModal';
 import { StatusBadge } from '../components/shared/StatusBadge';
+import AuthModal from '../components/Header/AuthModal';
 
 const Submissions = () => {
   const navigate = useNavigate();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -162,40 +161,6 @@ const Submissions = () => {
     );
   }
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) throw error;
-      navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password
-      });
-
-      if (error) throw error;
-      navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-24">
       <div className="container-custom py-12">
@@ -281,72 +246,14 @@ const Submissions = () => {
       </div>
 
       {/* Auth Modal */}
-      {showAuthModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <h2 className="text-2xl font-bold mb-6 text-center">
-              {isSignUp ? 'Create Account' : 'Sign In'}
-            </h2>
-
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full btn-primary py-3 text-lg"
-              >
-                {isSignUp ? 'Create Account' : 'Sign In'}
-              </button>
-            </form>
-
-            <div className="mt-4 text-center">
-              <button
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="text-primary hover:text-primary-dark text-sm"
-              >
-                {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-              </button>
-            </div>
-
-            <button
-              onClick={() => setShowAuthModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-            >
-              <X size={24} />
-            </button>
-          </div>
-        </div>
-      )}
+      <AuthModal
+        showAuthModal={showAuthModal}
+        setShowAuthModal={setShowAuthModal}
+        onSuccess={() => {
+          // Redirect after successful authentication
+          navigate('/dashboard');
+        }}
+      />
 
       {/* Submission Tips Modal */}
       <SubmissionTipsModal

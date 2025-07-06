@@ -25,17 +25,21 @@ const DeleteConfirmModal = ({ campaign, onClose, onConfirm }: DeleteConfirmModal
     try {
       setFormError(null);
       setIsSubmitting(true);
-      
+
       // Delete campaign from database
       const { error } = await supabase
         .from('campaigns')
         .delete()
         .eq('id', campaign.id);
-      
+
       if (error) throw error;
-      
+
       // Call the confirm handler
       onConfirm(campaign.id);
+
+      // Reset state and close modal on success
+      setIsSubmitting(false);
+      onClose();
     } catch (error: any) {
       setFormError(error.message);
       setIsSubmitting(false);

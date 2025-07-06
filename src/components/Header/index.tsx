@@ -19,11 +19,22 @@ const Header = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
+
+  // Auto-clear error after 5 seconds
+  useEffect(() => {
+    if (error) {
+      const timeout = setTimeout(() => {
+        setError(null);
+      }, 5000);
+      return () => clearTimeout(timeout);
+    }
+  }, [error]);
   const location = useLocation();
   const { coins } = useCoin();
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
-  
+
   // Check if we're on the buy-coins page to adjust header styling
   const isBuyCoinsPage = location.pathname === '/buy-coins';
 
@@ -55,7 +66,7 @@ const Header = () => {
       if (showProfileMenu && profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false);
       }
-      
+
       // Close notifications if clicked outside
       if (showNotifications && notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
@@ -94,7 +105,7 @@ const Header = () => {
 
   // Check if current user is admin
   const isAdmin = profile?.is_admin;
-  
+
   // If admin, redirect from buy-coins page
   useEffect(() => {
     if (isAdmin && location.pathname === '/buy-coins') {
@@ -128,7 +139,7 @@ const Header = () => {
       if (!data) {
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
-          .insert([{ 
+          .insert([{
             id: userId,
             email: userEmail, // Use the verified user email
             avatar_style: 'initials',
@@ -157,7 +168,7 @@ const Header = () => {
       // Load read notification IDs from localStorage
       const storedReadIds = JSON.parse(localStorage.getItem('readNotifications') || '[]');
       setReadNotificationIds(new Set(storedReadIds));
-      
+
       // Get user profile to check if admin
       const { data: profile } = await supabase
         .from('profiles')
@@ -177,7 +188,7 @@ const Header = () => {
             .eq('status', 'pending')
             .order('created_at', { ascending: false })
             .limit(10),
-          
+
           // Messages to admin
           supabase
             .from('messages')
@@ -186,10 +197,26 @@ const Header = () => {
             .eq('read', false)
             .order('created_at', { ascending: false })
             .limit(10),
-          
-          // Campaigns that hit their goal - using RPC function instead of filter
+
+          // Campaigns that hit their goal - using RPC function with fallback
           supabase
             .rpc('get_campaigns_reaching_goal')
+            .catch(async (rpcError) => {
+              console.warn('RPC function get_campaigns_reaching_goal failed, using fallback:', rpcError);
+              // Fallback: query campaigns directly with comparison (less efficient but functional)
+              return supabase
+                .from('campaigns')
+                .select('*')
+                .eq('is_archived', false)
+                .then(({ data, error }) => {
+                  if (error) return { data: null, error };
+                  // Filter on client-side as fallback
+                  const goalReachedCampaigns = data?.filter(campaign =>
+                    campaign.current_reservations >= campaign.reservation_goal
+                  ) || [];
+                  return { data: goalReachedCampaigns, error: null };
+                });
+            })
         ]);
 
         // Format admin notifications
@@ -240,7 +267,7 @@ const Header = () => {
             .eq('read', false)
             .order('created_at', { ascending: false })
             .limit(10),
-          
+
           // Submission updates
           supabase
             .from('submission_updates')
@@ -248,7 +275,7 @@ const Header = () => {
               id, status, comment, created_at,
               submission:submissions!submission_id(id, idea_name)
             `)
-            .in('submission_id', 
+            .in('submission_id',
               supabase
                 .from('submissions')
                 .select('id')
@@ -275,15 +302,17 @@ const Header = () => {
             id: `update-${update.id}`,
             type: 'update',
             title: 'Submission Update',
-            message: `Your submission "${update.submission?.idea_name}" status: ${update.status}`,
+            message: update.comment
+              ? `"${update.submission?.idea_name}": ${update.comment.substring(0, 50)}...`
+              : `Your submission "${update.submission?.idea_name}" status: ${update.status}`,
             time: update.created_at,
-            link: `/treasure-hoard`
+            link: `/submission/${update.submission?.id}`
           })));
         }
       }
-      
+
       // Filter out notifications that have been read
-      notifications = notifications.filter(notification => 
+      notifications = notifications.filter(notification =>
         !storedReadIds.includes(notification.id)
       );
 
@@ -301,10 +330,10 @@ const Header = () => {
     // Remove notification from local state
     setNotifications(prev => prev.filter(n => n.id !== notificationId));
     setUnreadCount(prev => Math.max(0, prev - 1));
-    
+
     // Add to read notifications set to prevent showing again on refresh
     setReadNotificationIds(prev => new Set(prev).add(notificationId));
-    
+
     // Store read notifications in localStorage
     const storedIds = JSON.parse(localStorage.getItem('readNotifications') || '[]');
     localStorage.setItem('readNotifications', JSON.stringify([...storedIds, notificationId]));
@@ -312,7 +341,7 @@ const Header = () => {
 
   const markAllAsRead = async () => {
     if (!user) return;
-    
+
     try {
       // Mark all messages as read
       await supabase
@@ -320,15 +349,15 @@ const Header = () => {
         .update({ read: true })
         .eq('to_user_id', user.id)
         .eq('read', false);
-      
+
       setNotifications([]);
       setUnreadCount(0);
-      
+
       // Add all notification IDs to read set
       const newReadIds = new Set(readNotificationIds);
       notifications.forEach(n => newReadIds.add(n.id));
       setReadNotificationIds(newReadIds);
-      
+
       // Update localStorage
       const storedIds = JSON.parse(localStorage.getItem('readNotifications') || '[]');
       const allIds = [...storedIds, ...notifications.map(n => n.id)];
@@ -373,69 +402,96 @@ const Header = () => {
   };
 
   return (
-    <header
-      className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-white shadow-md py-2' : 'bg-white py-4'
-      }`}
-    >
-      <div className="container-custom">
-        <div className="flex items-center justify-between">
-          <Logo />
-
-          {/* Desktop navigation */}
-          <DesktopNavigation
-            profileMenuRef={profileMenuRef}
-            notificationsRef={notificationsRef}
-            isAdmin={isAdmin}
-            user={user}
-            coins={coins}
-            location={location}
-            isBuyCoinsPage={isBuyCoinsPage}
-            handleBuyCoinsClick={handleBuyCoinsClick}
-            showAuthModal={showAuthModal}
-            setShowAuthModal={setShowAuthModal}
-            unreadCount={unreadCount}
-            showNotifications={showNotifications}
-            setShowNotifications={setShowNotifications}
-            notifications={notifications}
-            markNotificationAsRead={markNotificationAsRead}
-            markAllAsRead={markAllAsRead}
-            getNotificationIcon={getNotificationIcon}
-            navigate={navigate}
-            profile={profile}
-            handleAuth={handleAuth}
-            showProfileMenu={showProfileMenu}
-            setShowProfileMenu={setShowProfileMenu}
-            handleSignOut={handleSignOut}
-          />
-
-          {/* Mobile menu button */}
-          <MobileNavigation
-            isMenuOpen={isMenuOpen}
-            setIsMenuOpen={setIsMenuOpen}
-            isAdmin={isAdmin}
-            user={user}
-            coins={coins}
-            isBuyCoinsPage={isBuyCoinsPage}
-            handleBuyCoinsClick={handleBuyCoinsClick}
-            showAuthModal={showAuthModal}
-            setShowAuthModal={setShowAuthModal}
-            showNotifications={showNotifications}
-            setShowNotifications={setShowNotifications}
-            unreadCount={unreadCount}
-            location={location}
-            navigate={navigate}
-            handleSignOut={handleSignOut}
-          />
+    <>
+      {/* Error Banner */}
+      {error && (
+        <div className="fixed top-0 left-0 right-0 bg-red-50 border-b border-red-200 px-4 py-2 z-[60]">
+          <div className="container-custom flex items-center justify-between">
+            <div className="flex items-center text-red-700">
+              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm font-medium">{error}</span>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-500 hover:text-red-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
         </div>
-      </div>
-      
-      {/* Auth Modal */}
-      <AuthModal 
-        showAuthModal={showAuthModal}
-        setShowAuthModal={setShowAuthModal}
-      />
-    </header>
+      )}
+
+      <header
+        className={`fixed w-full z-50 transition-all duration-300 ${error ? 'top-10' : 'top-0'
+          } ${isScrolled ? 'bg-white shadow-md py-2' : 'bg-white py-4'}`}
+      >
+        <div className="container-custom">
+          <div className="flex items-center justify-between">
+            <Logo />
+
+            {/* Desktop navigation */}
+            <DesktopNavigation
+              profileMenuRef={profileMenuRef}
+              notificationsRef={notificationsRef}
+              isAdmin={isAdmin}
+              user={user}
+              coins={coins}
+              location={location}
+              isBuyCoinsPage={isBuyCoinsPage}
+              handleBuyCoinsClick={handleBuyCoinsClick}
+              showAuthModal={showAuthModal}
+              setShowAuthModal={setShowAuthModal}
+              unreadCount={unreadCount}
+              showNotifications={showNotifications}
+              setShowNotifications={setShowNotifications}
+              notifications={notifications}
+              markNotificationAsRead={markNotificationAsRead}
+              markAllAsRead={markAllAsRead}
+              getNotificationIcon={getNotificationIcon}
+              navigate={navigate}
+              profile={profile}
+              handleAuth={handleAuth}
+              showProfileMenu={showProfileMenu}
+              setShowProfileMenu={setShowProfileMenu}
+              handleSignOut={handleSignOut}
+            />
+
+            {/* Mobile menu button */}
+            <MobileNavigation
+              isMenuOpen={isMenuOpen}
+              setIsMenuOpen={setIsMenuOpen}
+              isAdmin={isAdmin}
+              user={user}
+              coins={coins}
+              isBuyCoinsPage={isBuyCoinsPage}
+              handleBuyCoinsClick={handleBuyCoinsClick}
+              showAuthModal={showAuthModal}
+              setShowAuthModal={setShowAuthModal}
+              showNotifications={showNotifications}
+              setShowNotifications={setShowNotifications}
+              unreadCount={unreadCount}
+              location={location}
+              navigate={navigate}
+              handleSignOut={handleSignOut}
+              notifications={notifications}
+              markNotificationAsRead={markNotificationAsRead}
+              markAllAsRead={markAllAsRead}
+              getNotificationIcon={getNotificationIcon}
+            />
+          </div>
+        </div>
+
+        {/* Auth Modal */}
+        <AuthModal
+          showAuthModal={showAuthModal}
+          setShowAuthModal={setShowAuthModal}
+        />
+      </header>
+    </>
   );
 };
 

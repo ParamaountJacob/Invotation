@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { coinLogger } from '../utils/logger';
+import { TIMING } from '../constants';
 
 interface CoinContextType {
   coins: number;
@@ -26,7 +28,6 @@ interface CoinProviderProps {
 
 // Pre-cache coin data
 let coinCache: { coins: number; lastFetch: number } | null = null;
-const COIN_CACHE_DURATION = 10000; // 10 seconds
 
 export const CoinProvider: React.FC<CoinProviderProps> = ({ children }) => {
   const [coins, setCoins] = useState(0);
@@ -38,15 +39,15 @@ export const CoinProvider: React.FC<CoinProviderProps> = ({ children }) => {
       // Verify the current user is an admin
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-      
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('is_admin')
         .eq('id', user.id)
         .single();
-      
+
       if (!profile?.is_admin) return false;
-      
+
       // Update the target user's coins
       const { data, error } = await supabase
         .from('profiles')
@@ -54,10 +55,10 @@ export const CoinProvider: React.FC<CoinProviderProps> = ({ children }) => {
         .eq('id', userId);
 
       if (error) throw error;
-      
+
       // Log the update for debugging
-      console.log('Coin update successful:', { userId, newAmount, data });
-      
+      coinLogger.debug('Coin update successful:', { userId, newAmount, data });
+
       // If updating the current user, also update local state
       if (userId === user.id) {
         setCoins(newAmount);
@@ -67,7 +68,7 @@ export const CoinProvider: React.FC<CoinProviderProps> = ({ children }) => {
           lastFetch: Date.now()
         };
       }
-      
+
       return true;
     } catch (err) {
       console.error('Error updating user coins:', err);
@@ -79,7 +80,7 @@ export const CoinProvider: React.FC<CoinProviderProps> = ({ children }) => {
     try {
       // Check cache first
       const now = Date.now();
-      if (coinCache && (now - coinCache.lastFetch) < COIN_CACHE_DURATION) {
+      if (coinCache && (now - coinCache.lastFetch) < TIMING.COIN_CACHE_DURATION) {
         setCoins(coinCache.coins);
         setLoading(false);
         return;
@@ -104,7 +105,7 @@ export const CoinProvider: React.FC<CoinProviderProps> = ({ children }) => {
       } else {
         const coinCount = profile?.coins || 0;
         setCoins(coinCount);
-        
+
         // Update cache
         coinCache = {
           coins: coinCount,
@@ -134,13 +135,13 @@ export const CoinProvider: React.FC<CoinProviderProps> = ({ children }) => {
       // Immediately update local state for instant UI feedback
       const newCoins = coins + amount;
       setCoins(newCoins);
-      
+
       // Update cache
       coinCache = {
         coins: newCoins,
         lastFetch: Date.now()
       };
-      
+
       // Return the new coin count for immediate use
       return newCoins;
     } catch (err) {
@@ -167,13 +168,13 @@ export const CoinProvider: React.FC<CoinProviderProps> = ({ children }) => {
 
       const newCoins = coins - amount;
       setCoins(newCoins);
-      
+
       // Update cache
       coinCache = {
         coins: newCoins,
         lastFetch: Date.now()
       };
-      
+
       return true;
     } catch (err) {
       console.error('Error deducting coins:', err);

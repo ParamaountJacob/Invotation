@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, Lightbulb, Target, Camera, FileText, DollarSign, Shield, CheckCircle } from 'lucide-react';
 
 interface SubmissionTipsModalProps {
@@ -7,8 +8,9 @@ interface SubmissionTipsModalProps {
 }
 
 const SubmissionTipsModal: React.FC<SubmissionTipsModalProps> = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'tips' | 'example'>('tips');
-  
+
   if (!isOpen) return null;
 
   return (
@@ -29,31 +31,29 @@ const SubmissionTipsModal: React.FC<SubmissionTipsModalProps> = ({ isOpen, onClo
             <X size={24} />
           </button>
         </div>
-        
+
         {/* Tabs */}
         <div className="flex border-b border-gray-200">
           <button
             onClick={() => setActiveTab('tips')}
-            className={`flex-1 py-3 font-medium transition-colors ${
-              activeTab === 'tips'
+            className={`flex-1 py-3 font-medium transition-colors ${activeTab === 'tips'
                 ? 'text-primary border-b-2 border-primary'
                 : 'text-gray-500 hover:text-gray-700'
-            }`}
+              }`}
           >
             Helpful Tips
           </button>
           <button
             onClick={() => setActiveTab('example')}
-            className={`flex-1 py-3 font-medium transition-colors ${
-              activeTab === 'example'
+            className={`flex-1 py-3 font-medium transition-colors ${activeTab === 'example'
                 ? 'text-primary border-b-2 border-primary'
                 : 'text-gray-500 hover:text-gray-700'
-            }`}
+              }`}
           >
             Example Submission
           </button>
         </div>
-        
+
         {/* Content */}
         <div className="overflow-y-auto p-6">
           {activeTab === 'tips' && (
@@ -143,7 +143,7 @@ const SubmissionTipsModal: React.FC<SubmissionTipsModalProps> = ({ isOpen, onClo
               </div>
             </div>
           )}
-          
+
           {activeTab === 'example' && (
             <div className="space-y-6">
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
@@ -151,7 +151,7 @@ const SubmissionTipsModal: React.FC<SubmissionTipsModalProps> = ({ isOpen, onClo
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">Example Submission</h3>
                   <p className="text-gray-600">This is how simple your submission can be</p>
                 </div>
-                
+
                 <div className="bg-white rounded-xl p-6 shadow-md">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {/* Basic Info */}
@@ -163,7 +163,7 @@ const SubmissionTipsModal: React.FC<SubmissionTipsModalProps> = ({ isOpen, onClo
                         </div>
                         <p className="text-gray-700 bg-gray-50 rounded-lg p-3">"SmartMug Pro"</p>
                       </div>
-                      
+
                       <div>
                         <div className="flex items-center mb-2">
                           <span className="text-2xl mr-2">🎯</span>
@@ -171,7 +171,7 @@ const SubmissionTipsModal: React.FC<SubmissionTipsModalProps> = ({ isOpen, onClo
                         </div>
                         <p className="text-gray-700 bg-gray-50 rounded-lg p-3">"Coffee mug that connects to your phone and keeps coffee at perfect temperature"</p>
                       </div>
-                      
+
                       <div>
                         <div className="flex items-center mb-2">
                           <span className="text-2xl mr-2">📋</span>
@@ -180,7 +180,7 @@ const SubmissionTipsModal: React.FC<SubmissionTipsModalProps> = ({ isOpen, onClo
                         <p className="text-gray-700 bg-gray-50 rounded-lg p-3">"Just thought of it!"</p>
                       </div>
                     </div>
-                    
+
                     {/* Details */}
                     <div className="space-y-4">
                       <div>
@@ -190,7 +190,7 @@ const SubmissionTipsModal: React.FC<SubmissionTipsModalProps> = ({ isOpen, onClo
                         </div>
                         <p className="text-gray-700 bg-gray-50 rounded-lg p-3 text-sm">"I'm tired of my coffee getting cold. What if there was a mug that could keep it warm and let me control the temperature from my phone?"</p>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <div className="flex items-center mb-2">
@@ -208,7 +208,7 @@ const SubmissionTipsModal: React.FC<SubmissionTipsModalProps> = ({ isOpen, onClo
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Sketch */}
                     <div className="space-y-4">
                       <div>
@@ -217,7 +217,7 @@ const SubmissionTipsModal: React.FC<SubmissionTipsModalProps> = ({ isOpen, onClo
                           <h4 className="font-bold text-gray-900">Hand-drawn Sketch</h4>
                         </div>
                         <div className="bg-gray-50 rounded-lg p-4 border-2 border-dashed border-gray-200">
-                          <img 
+                          <img
                             src="https://res.cloudinary.com/digjsdron/image/upload/v1749752320/ChatGPT_Image_Jun_12_2025_01_16_04_PM_fdoc6c.png"
                             alt="Example hand-drawn sketch"
                             className="w-full max-w-32 mx-auto rounded-md"
@@ -228,7 +228,7 @@ const SubmissionTipsModal: React.FC<SubmissionTipsModalProps> = ({ isOpen, onClo
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Result */}
                   <div className="mt-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
                     <div className="flex items-center justify-center mb-3">
@@ -236,13 +236,13 @@ const SubmissionTipsModal: React.FC<SubmissionTipsModalProps> = ({ isOpen, onClo
                       <h4 className="text-xl font-bold text-green-900">Potential Result</h4>
                     </div>
                     <p className="text-green-800 text-center">
-                      From a simple submission like this, you could earn <span className="font-bold">$8 per unit sold</span>. 
+                      From a simple submission like this, you could earn <span className="font-bold">$8 per unit sold</span>.
                       That could be <span className="font-bold">$40,000 or more</span> in ongoing profits!
                     </p>
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
                 <h3 className="text-xl font-bold mb-4 flex items-center">
                   <Shield className="w-5 h-5 text-primary mr-2" />
@@ -289,14 +289,17 @@ const SubmissionTipsModal: React.FC<SubmissionTipsModalProps> = ({ isOpen, onClo
             </div>
           )}
         </div>
-        
+
         {/* Footer */}
         <div className="p-6 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
           <p className="text-sm text-gray-500">
             Don't worry about perfection - we're here to help develop your idea!
           </p>
           <button
-            onClick={() => window.location.href = '/submit'}
+            onClick={() => {
+              onClose();
+              navigate('/submit');
+            }}
             className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors"
           >
             Submit Your Idea

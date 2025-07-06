@@ -13,6 +13,7 @@ const CompletedProjects = lazy(() => import('./pages/CompletedProjects'));
 const CompletedProjectDetail = lazy(() => import('./pages/CompletedProjectDetail'));
 const HowItWorks = lazy(() => import('./components/HowItWorks'));
 const Submit = lazy(() => import('./pages/Submit'));
+const SubmissionTips = lazy(() => import('./pages/SubmissionTips'));
 const Submissions = lazy(() => import('./pages/Submissions'));
 const SubmissionDetail = lazy(() => import('./pages/SubmissionDetail'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -50,6 +51,7 @@ function App() {
           <Route path="/completed-project/:id" element={<CompletedProjectDetail />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/submit" element={<Submit />} />
+          <Route path="/submission-tips" element={<SubmissionTips />} />
           <Route path="/submissions" element={<Submissions />} />
           <Route path="/submission/:id" element={<SubmissionDetail />} />
           <Route path="/dashboard" element={<Dashboard />} />

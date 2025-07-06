@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Maximize2, Volume2, VolumeX, Play, Pause } from 'lucide-react';
 
 interface MediaModalProps {
@@ -70,7 +70,7 @@ const MediaModal: React.FC<MediaModalProps> = ({ isOpen, onClose, type, src, tit
 
   const togglePlayPause = () => {
     if (!videoRef.current) return;
-    
+
     if (videoRef.current.paused) {
       videoRef.current.play();
       setIsPlaying(true);
@@ -84,15 +84,15 @@ const MediaModal: React.FC<MediaModalProps> = ({ isOpen, onClose, type, src, tit
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    
+
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
     const handleEnded = () => setIsPlaying(false);
-    
+
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
     video.addEventListener('ended', handleEnded);
-    
+
     return () => {
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
@@ -104,7 +104,7 @@ const MediaModal: React.FC<MediaModalProps> = ({ isOpen, onClose, type, src, tit
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-      <div 
+      <div
         ref={modalRef}
         className="relative bg-black rounded-xl overflow-hidden max-w-5xl w-full mx-auto shadow-2xl"
       >
@@ -116,20 +116,20 @@ const MediaModal: React.FC<MediaModalProps> = ({ isOpen, onClose, type, src, tit
           <div className="flex items-center space-x-2 ml-auto">
             {type === 'video' && !src.includes('youtube.com') && !src.includes('youtu.be') && !src.includes('vimeo.com') && (
               <>
-              <button
-                onClick={togglePlayPause}
-                className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
-                aria-label={isPlaying ? "Pause" : "Play"}
-              >
-                {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-              </button>
-              <button
-                onClick={() => setIsMuted(!isMuted)}
-                className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
-                aria-label={isMuted ? "Unmute" : "Mute"}
-              >
-                {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-              </button>
+                <button
+                  onClick={togglePlayPause}
+                  className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+                  aria-label={isPlaying ? "Pause" : "Play"}
+                >
+                  {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+                </button>
+                <button
+                  onClick={() => setIsMuted(!isMuted)}
+                  className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+                  aria-label={isMuted ? "Unmute" : "Mute"}
+                >
+                  {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                </button>
               </>
             )}
             <button
@@ -152,13 +152,13 @@ const MediaModal: React.FC<MediaModalProps> = ({ isOpen, onClose, type, src, tit
         {/* Content */}
         <div className="flex items-center justify-center">
           {type === 'image' ? (
-            <div 
+            <div
               ref={contentRef as React.RefObject<HTMLDivElement>}
               className="w-full h-full flex items-center justify-center"
             >
-              <img 
-                src={src} 
-                alt={title || "Image"} 
+              <img
+                src={src}
+                alt={title || "Image"}
                 className="max-w-full max-h-[80vh] object-contain"
               />
             </div>

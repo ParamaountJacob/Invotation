@@ -1,74 +1,100 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { ErrorDisplay } from '../shared/ErrorDisplay';
 
-const AuthModal = ({ showAuthModal, setShowAuthModal }) => {
+interface AuthModalProps {
+  showAuthModal: boolean;
+  setShowAuthModal: (show: boolean) => void;
+  onSuccess?: () => void;
+}
+
+const AuthModal = ({ showAuthModal, setShowAuthModal, onSuccess }: AuthModalProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
-  const [error, setError] = useState(null);
+  const { error, handleError, clearError } = useErrorHandler();
 
-  const handleSignIn = async (e) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    
+    clearError();
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
-      
+
       if (error) throw error;
-      setShowAuthModal(false);
+
+      // Reset form and close modal
       setEmail('');
       setPassword('');
+      setShowAuthModal(false);
+
+      // Call success callback if provided
+      if (onSuccess) onSuccess();
     } catch (err) {
-      setError(err.message);
+      handleError(err, 'Failed to sign in');
     }
   };
 
-  const handleSignUp = async (e) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    
+    clearError();
+
     try {
       const { error } = await supabase.auth.signUp({
         email,
         password
       });
-      
+
       if (error) throw error;
-      setShowAuthModal(false);
+
+      // Reset form and close modal
       setEmail('');
       setPassword('');
+      setShowAuthModal(false);
+
+      // Call success callback if provided
+      if (onSuccess) onSuccess();
     } catch (err) {
-      setError(err.message);
+      handleError(err, 'Failed to create account');
     }
+  };
+
+  const handleClose = () => {
+    setShowAuthModal(false);
+    clearError();
+    setEmail('');
+    setPassword('');
   };
 
   if (!showAuthModal) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-4">
+      <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative max-h-[90vh] overflow-y-auto">
+        {/* Close Button */}
+        <button
+          onClick={handleClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
+        >
+          <X size={24} />
+        </button>
+
+        {/* Header */}
+        <div className="mb-6 pr-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
             {isSignUp ? 'Create Account' : 'Sign In'}
           </h2>
-          <button
-            onClick={() => setShowAuthModal(false)}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X size={24} />
-          </button>
         </div>
-        
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-            {error}
-          </div>
-        )}
-        
+
+        {/* Error Display */}
+        <ErrorDisplay error={error} onClear={clearError} />
+
+        {/* Form */}
         <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -78,11 +104,11 @@ const AuthModal = ({ showAuthModal, setShowAuthModal }) => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+              className="w-full px-3 sm:px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Password
@@ -91,23 +117,24 @@ const AuthModal = ({ showAuthModal, setShowAuthModal }) => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+              className="w-full px-3 sm:px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
               required
             />
           </div>
-          
+
           <button
             type="submit"
-            className="w-full btn-primary py-2"
+            className="w-full btn-primary py-3 text-base font-medium transition-colors mt-6"
           >
             {isSignUp ? 'Create Account' : 'Sign In'}
           </button>
         </form>
-        
+
+        {/* Toggle Sign In/Up */}
         <div className="mt-4 text-center">
           <button
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-primary hover:text-primary-dark text-sm"
+            className="text-primary hover:text-primary-dark text-sm transition-colors"
           >
             {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
           </button>

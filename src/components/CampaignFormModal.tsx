@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Upload, Check, AlertCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -74,7 +74,7 @@ const CampaignFormModal: React.FC<CampaignFormModalProps> = ({ isOpen, onClose, 
   useEffect(() => {
     setHasChanges(isDirty || imageFile !== null);
   }, [isDirty, imageFile, formValues]);
-  
+
   // Update hasChanges when richDescription changes
   useEffect(() => {
     try {
@@ -82,7 +82,7 @@ const CampaignFormModal: React.FC<CampaignFormModalProps> = ({ isOpen, onClose, 
         text: '',
         media: []
       });
-      
+
       if (richDescription !== defaultDescription) {
         setHasChanges(true);
       }
@@ -149,26 +149,26 @@ const CampaignFormModal: React.FC<CampaignFormModalProps> = ({ isOpen, onClose, 
     if (!e.target.files || e.target.files.length === 0) {
       return;
     }
-    
+
     const file = e.target.files[0];
-    
+
     // Validate file type
     if (!file.type.startsWith('image/')) {
       setError('Please select an image file');
       return;
     }
-    
+
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setError('Image must be smaller than 5MB');
       return;
     }
-    
+
     // Clean up previous preview URL to prevent memory leaks
     if (imagePreview) {
       URL.revokeObjectURL(imagePreview);
     }
-    
+
     setImageFile(file);
     const newPreviewUrl = URL.createObjectURL(file);
     setImagePreview(newPreviewUrl);
@@ -182,6 +182,65 @@ const CampaignFormModal: React.FC<CampaignFormModalProps> = ({ isOpen, onClose, 
     }
   };
 
+  // Comprehensive video URL parsing function
+  const parseVideoUrl = (url: string): { embedUrl: string; platform: string } | null => {
+    if (!url) return null;
+
+    // YouTube patterns
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const youtubeMatch = url.match(youtubeRegex);
+    if (youtubeMatch) {
+      return {
+        embedUrl: `https://www.youtube.com/embed/${youtubeMatch[1]}`,
+        platform: 'youtube'
+      };
+    }
+
+    // Vimeo patterns
+    const vimeoRegex = /(?:vimeo\.com\/)([0-9]+)/;
+    const vimeoMatch = url.match(vimeoRegex);
+    if (vimeoMatch) {
+      return {
+        embedUrl: `https://player.vimeo.com/video/${vimeoMatch[1]}`,
+        platform: 'vimeo'
+      };
+    }
+
+    // Dailymotion patterns
+    const dailymotionRegex = /(?:dailymotion\.com\/video\/|dai\.ly\/)([a-zA-Z0-9]+)/;
+    const dailymotionMatch = url.match(dailymotionRegex);
+    if (dailymotionMatch) {
+      return {
+        embedUrl: `https://www.dailymotion.com/embed/video/${dailymotionMatch[1]}`,
+        platform: 'dailymotion'
+      };
+    }
+
+    // TikTok patterns (note: TikTok embeds have limitations)
+    const tiktokRegex = /(?:tiktok\.com\/.+\/video\/|vm\.tiktok\.com\/)([0-9]+)/;
+    const tiktokMatch = url.match(tiktokRegex);
+    if (tiktokMatch) {
+      return {
+        embedUrl: `https://www.tiktok.com/embed/v2/${tiktokMatch[1]}`,
+        platform: 'tiktok'
+      };
+    }
+
+    // Direct video file patterns
+    if (url.match(/\.(mp4|webm|ogg|mov|avi)$/i)) {
+      return {
+        embedUrl: url,
+        platform: 'direct'
+      };
+    }
+
+    // Fallback for other URLs
+    return {
+      embedUrl: url,
+      platform: 'unknown'
+    };
+  };
+
   // Handle video URL change to show preview
   const handleVideoUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
@@ -192,22 +251,22 @@ const CampaignFormModal: React.FC<CampaignFormModalProps> = ({ isOpen, onClose, 
 
   const uploadImage = async (): Promise<string> => {
     if (!imageFile) throw new Error('No image file selected');
-    
+
     try {
       const fileExt = imageFile.name.split('.').pop();
       const fileName = `campaign-${Date.now()}.${fileExt}`;
       const filePath = `campaigns/${fileName}`;
-      
+
       const { error: uploadError } = await supabase.storage
         .from('campaign-images')
         .upload(filePath, imageFile, { upsert: true });
-      
+
       if (uploadError) throw uploadError;
-      
+
       const { data: { publicUrl } } = supabase.storage
         .from('campaign-images')
         .getPublicUrl(filePath);
-      
+
       return publicUrl;
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -223,11 +282,11 @@ const CampaignFormModal: React.FC<CampaignFormModalProps> = ({ isOpen, onClose, 
 
     setUploading(true);
     setError(null);
-    
+
     try {
       // Upload image first
       const imageUrl = await uploadImage();
-      
+
       // Create campaign in database
       const { error: insertError } = await supabase
         .from('campaigns')
@@ -248,18 +307,18 @@ const CampaignFormModal: React.FC<CampaignFormModalProps> = ({ isOpen, onClose, 
         })
         .select('id')
         .single();
-      
+
       if (insertError) throw insertError;
-      
+
       // Store the campaign ID for FAQs tab
       if (insertError?.data?.id) {
         setCampaignId(insertError.data.id);
       }
-      
+
       // Show success message
       setSuccess(true);
       setHasChanges(false);
-      
+
       // Reset form
       reset();
       if (imagePreview) {
@@ -269,15 +328,15 @@ const CampaignFormModal: React.FC<CampaignFormModalProps> = ({ isOpen, onClose, 
       setImagePreview('');
       setVideoPreview(null);
       resetFileInput();
-      
+
       // Notify parent component
       onSuccess();
-      
+
       // Close modal after a delay
       setTimeout(() => {
         onClose();
       }, 2000);
-      
+
     } catch (err: any) {
       console.error('Error creating campaign:', err);
       setError(err.message);
@@ -328,7 +387,7 @@ const CampaignFormModal: React.FC<CampaignFormModalProps> = ({ isOpen, onClose, 
         </div>
       )}
 
-      <div 
+      <div
         ref={modalRef}
         className="bg-white rounded-2xl p-6 max-w-4xl w-full mx-auto shadow-2xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()} // Prevent clicks inside from closing
@@ -343,378 +402,432 @@ const CampaignFormModal: React.FC<CampaignFormModalProps> = ({ isOpen, onClose, 
           </button>
         </div>
 
-        {/* Tab Navigation - Only show if we have a campaign ID (after initial save) */}
-        {campaignId && (
-          <div className="mb-6 border-b border-gray-200">
-            <div className="flex space-x-8">
-              <button
-                onClick={() => setActiveTab('details')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'details'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+        {/* Tab Navigation - Show after campaign creation OR always show to allow FAQ preview */}
+        <div className="mb-6 border-b border-gray-200">
+          <div className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('details')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'details'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
-              >
-                Campaign Details
-              </button>
-              <button
-                onClick={() => setActiveTab('faqs')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'faqs'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                FAQs
-              </button>
-            </div>
+            >
+              Campaign Details
+            </button>
+            <button
+              onClick={() => setActiveTab('faqs')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'faqs'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } ${!campaignId ? 'opacity-75' : ''}`}
+              title={!campaignId ? 'Save campaign first to manage FAQs' : ''}
+            >
+              FAQs
+              {!campaignId && (
+                <span className="ml-1 text-xs text-gray-400">(save first)</span>
+              )}
+            </button>
           </div>
-        )}
-        
+        </div>
+
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center text-red-700">
             <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
             <p>{error}</p>
           </div>
         )}
-        
+
         {success && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center text-green-700">
             <Check className="w-5 h-5 mr-2 flex-shrink-0" />
             <p>Campaign created successfully!</p>
           </div>
         )}
-        
+
         {activeTab === 'details' && (
           <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Campaign Image */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Campaign Image <span className="text-red-500">*</span>
-            </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200">
-                {imagePreview ? (
-                  <img 
-                    src={imagePreview} 
-                    alt="Campaign preview" 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    No image selected
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col justify-center">
-                <div className="flex items-center justify-center w-full">
-                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <Upload className="w-8 h-8 mb-3 text-gray-400" />
-                      <p className="mb-2 text-sm text-gray-500">
-                        <span className="font-semibold">Click to upload</span> or drag and drop
-                      </p>
-                      <p className="text-xs text-gray-500">PNG, JPG or WEBP (Max 5MB)</p>
-                    </div>
-                    <input 
-                      ref={fileInputRef}
-                      type="file" 
-                      className="hidden" 
-                      accept="image/*"
-                      onChange={handleImageChange}
+            {/* Campaign Image */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Campaign Image <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200">
+                  {imagePreview ? (
+                    <img
+                      src={imagePreview}
+                      alt="Campaign preview"
+                      className="w-full h-full object-cover"
                     />
-                  </label>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      No image selected
+                    </div>
+                  )}
                 </div>
-                {imageFile && (
-                  <div className="mt-3 flex items-center justify-between bg-gray-50 p-2 rounded-lg">
-                    <span className="text-sm text-gray-600 truncate max-w-[200px]">
-                      {imageFile.name}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                <div className="flex flex-col justify-center">
+                  <div className="flex items-center justify-center w-full">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Upload className="w-8 h-8 mb-3 text-gray-400" />
+                        <p className="mb-2 text-sm text-gray-500">
+                          <span className="font-semibold">Click to upload</span> or drag and drop
+                        </p>
+                        <p className="text-xs text-gray-500">PNG, JPG or WEBP (Max 5MB)</p>
+                      </div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                      />
+                    </label>
+                  </div>
+                  {imageFile && (
+                    <div className="mt-3 flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+                      <span className="text-sm text-gray-600 truncate max-w-[200px]">
+                        {imageFile.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Short Description <span className="text-red-500">*</span>
+              </label>
+              <p className="text-xs text-gray-500 mb-2">
+                A brief summary (150 characters max) that will appear on campaign cards
+              </p>
+              <textarea
+                {...register('short_description')}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                placeholder="Brief, attention-grabbing summary of your campaign..."
+                rows={2}
+                maxLength={150}
+              ></textarea>
+              {errors.short_description && (
+                <p className="mt-1 text-sm text-red-600">{errors.short_description.message}</p>
+              )}
+            </div>
+
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Campaign Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  {...register('title')}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  placeholder="e.g., SmartMug Pro"
+                />
+                {errors.title && (
+                  <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  {...register('category')}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                >
+                  <option value="">Select Category</option>
+                  <option value="tech">Tech</option>
+                  <option value="home">Home</option>
+                  <option value="lifestyle">Lifestyle</option>
+                </select>
+                {errors.category && (
+                  <p className="mt-1 text-sm text-red-600">{errors.category.message}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Rich Description Editor */}
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Description <span className="text-red-500">*</span>
+              </label>
+              <RichDescriptionEditor
+                value={richDescription}
+                onChange={(value) => {
+                  setRichDescription(value);
+                  // Set a dummy value in the form to satisfy validation
+                  setValue('description', 'placeholder');
+                }}
+                placeholder="Describe the product in detail..."
+                rows={6}
+                className="focus:ring-2 focus:ring-primary focus:border-primary"
+              />
+              {errors.description && (
+                <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+              )}
+            </div>
+
+            {/* Campaign Details */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Reservation Goal <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  {...register('reservation_goal', { valueAsNumber: true })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  placeholder="e.g., 100"
+                />
+                {errors.reservation_goal && (
+                  <p className="mt-1 text-sm text-red-600">{errors.reservation_goal.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Estimated Retail Price ($) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  {...register('estimated_retail_price', { valueAsNumber: true })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  placeholder="e.g., 99.99"
+                />
+                {errors.estimated_retail_price && (
+                  <p className="mt-1 text-sm text-red-600">{errors.estimated_retail_price.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Minimum Bid <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  {...register('minimum_bid', { valueAsNumber: true })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  placeholder="e.g., 1"
+                />
+                {errors.minimum_bid && (
+                  <p className="mt-1 text-sm text-red-600">{errors.minimum_bid.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Days Active
+              </label>
+              <input
+                type="number"
+                {...register('days_old', { valueAsNumber: true })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                placeholder="e.g., 0"
+              />
+              {errors.days_old && (
+                <p className="mt-1 text-sm text-red-600">{errors.days_old.message}</p>
+              )}
+            </div>
+
+            {/* Media and Links */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Video URL (Optional)
+              </label>
+              <div className="space-y-3">
+                <input
+                  type="url"
+                  {...register('video_url')}
+                  onChange={handleVideoUrlChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  placeholder="e.g., https://www.youtube.com/watch?v=..."
+                />
+                <p className="text-xs text-gray-500">
+                  Enter a video URL from YouTube, Vimeo, Dailymotion, TikTok, or direct video file link
+                </p>
+
+                {/* Video Preview */}
+                {videoPreview && (
+                  <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden">
+                    {(() => {
+                      const parsedVideo = parseVideoUrl(videoPreview);
+                      if (!parsedVideo) return null;
+
+                      const { embedUrl, platform } = parsedVideo;
+
+                      if (platform === 'youtube' || platform === 'vimeo' || platform === 'dailymotion') {
+                        return (
+                          <div className="aspect-video">
+                            <iframe
+                              src={embedUrl}
+                              title="Video preview"
+                              className="w-full h-full"
+                              frameBorder="0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            ></iframe>
+                          </div>
+                        );
+                      }
+
+                      if (platform === 'tiktok') {
+                        return (
+                          <div className="aspect-[9/16] max-w-[300px] mx-auto">
+                            <iframe
+                              src={embedUrl}
+                              title="TikTok video preview"
+                              className="w-full h-full"
+                              frameBorder="0"
+                              allow="encrypted-media"
+                              allowFullScreen
+                            ></iframe>
+                          </div>
+                        );
+                      }
+
+                      if (platform === 'direct') {
+                        return (
+                          <div className="aspect-auto max-h-[200px]">
+                            <video
+                              src={embedUrl}
+                              controls
+                              className="w-full h-full"
+                              preload="metadata"
+                            >
+                              Your browser does not support the video tag.
+                            </video>
+                          </div>
+                        );
+                      }
+
+                      // Unknown platform fallback
+                      return (
+                        <div className="aspect-video">
+                          <div className="w-full h-full flex items-center justify-center bg-gray-100 p-4">
+                            <div className="text-center">
+                              <p className="text-gray-500 text-sm mb-2">Preview not available for this video platform</p>
+                              <a
+                                href={videoPreview}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 text-sm underline"
+                              >
+                                Open video in new tab
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Short Description <span className="text-red-500">*</span>
-            </label>
-            <p className="text-xs text-gray-500 mb-2">
-              A brief summary (150 characters max) that will appear on campaign cards
-            </p>
-            <textarea
-              {...register('short_description')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-              placeholder="Brief, attention-grabbing summary of your campaign..."
-              rows={2}
-              maxLength={150}
-            ></textarea>
-            {errors.short_description && (
-              <p className="mt-1 text-sm text-red-600">{errors.short_description.message}</p>
-            )}
-          </div>
-          
-          {/* Basic Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Campaign Title <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                {...register('title')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="e.g., SmartMug Pro"
-              />
-              {errors.title && (
-                <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Kickstarter URL (Optional)
+                </label>
+                <input
+                  type="url"
+                  {...register('kickstarter_url')}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  placeholder="e.g., https://www.kickstarter.com/..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Amazon URL (Optional)
+                </label>
+                <input
+                  type="url"
+                  {...register('amazon_url')}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  placeholder="e.g., https://www.amazon.com/..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Website URL (Optional)
+                </label>
+                <input
+                  type="url"
+                  {...register('website_url')}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  placeholder="e.g., https://www.example.com"
+                />
+              </div>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category <span className="text-red-500">*</span>
-              </label>
-              <select
-                {...register('category')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+
+            {/* Submit Button */}
+            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={handleCloseAttempt}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                disabled={uploading}
               >
-                <option value="">Select Category</option>
-                <option value="tech">Tech</option>
-                <option value="home">Home</option>
-                <option value="lifestyle">Lifestyle</option>
-              </select>
-              {errors.category && (
-                <p className="mt-1 text-sm text-red-600">{errors.category.message}</p>
-              )}
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50"
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <span className="flex items-center">
+                    <span className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full"></span>
+                    Creating...
+                  </span>
+                ) : (
+                  'Create Campaign'
+                )}
+              </button>
             </div>
-          </div>
-
-          {/* Rich Description Editor */}
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">
-              Description <span className="text-red-500">*</span>
-            </label>
-            <RichDescriptionEditor
-              value={richDescription}
-              onChange={(value) => {
-                setRichDescription(value);
-                // Set a dummy value in the form to satisfy validation
-                setValue('description', 'placeholder');
-              }}
-              placeholder="Describe the product in detail..."
-              rows={6}
-              className="focus:ring-2 focus:ring-primary focus:border-primary"
-            />
-            {errors.description && (
-              <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
-            )}
-          </div>
-          
-          {/* Campaign Details */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Reservation Goal <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                {...register('reservation_goal', { valueAsNumber: true })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="e.g., 100"
-              />
-              {errors.reservation_goal && (
-                <p className="mt-1 text-sm text-red-600">{errors.reservation_goal.message}</p>
-              )}
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Estimated Retail Price ($) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                {...register('estimated_retail_price', { valueAsNumber: true })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="e.g., 99.99"
-              />
-              {errors.estimated_retail_price && (
-                <p className="mt-1 text-sm text-red-600">{errors.estimated_retail_price.message}</p>
-              )}
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Minimum Bid <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                {...register('minimum_bid', { valueAsNumber: true })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="e.g., 1"
-              />
-              {errors.minimum_bid && (
-                <p className="mt-1 text-sm text-red-600">{errors.minimum_bid.message}</p>
-              )}
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Days Active
-            </label>
-            <input
-              type="number"
-              {...register('days_old', { valueAsNumber: true })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-              placeholder="e.g., 0"
-            />
-            {errors.days_old && (
-              <p className="mt-1 text-sm text-red-600">{errors.days_old.message}</p>
-            )}
-          </div>
-          
-          {/* Media and Links */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Video URL (Optional)
-            </label>
-            <div className="space-y-3">
-              <input
-                type="url"
-                {...register('video_url')}
-                onChange={handleVideoUrlChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="e.g., https://www.youtube.com/watch?v=..."
-              />
-              <p className="text-xs text-gray-500">
-                Enter a YouTube, Vimeo, or direct MP4 video URL
-              </p>
-              
-              {/* Video Preview */}
-              {videoPreview && (
-                <div className="mt-2 border border-gray-200 rounded-lg overflow-hidden">
-                  <div className={`${
-                    videoPreview.includes('youtube.com') || videoPreview.includes('youtu.be') || videoPreview.includes('vimeo.com')
-                      ? 'aspect-video'
-                      : 'aspect-auto max-h-[200px]'
-                  }`}>
-                    {videoPreview.includes('youtube.com') || videoPreview.includes('youtu.be') ? (
-                      <iframe
-                        src={videoPreview.replace('watch?v=', 'embed/')}
-                        title="Video preview"
-                        className="w-full h-full"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      ></iframe>
-                    ) : videoPreview.includes('vimeo.com') ? (
-                      <iframe
-                        src={videoPreview.replace('vimeo.com', 'player.vimeo.com/video')}
-                        title="Video preview"
-                        className="w-full h-full"
-                        frameBorder="0"
-                        allow="autoplay; fullscreen; picture-in-picture"
-                        allowFullScreen
-                      ></iframe>
-                    ) : videoPreview.match(/\.(mp4|webm|ogg)$/i) ? (
-                      <video
-                        src={videoPreview}
-                        controls
-                        className="w-full h-full"
-                        preload="metadata"
-                      >
-                        Your browser does not support the video tag.
-                      </video>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-100 p-4">
-                        <p className="text-gray-500 text-sm">Video preview not available</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Kickstarter URL (Optional)
-              </label>
-              <input
-                type="url"
-                {...register('kickstarter_url')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="e.g., https://www.kickstarter.com/..."
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Amazon URL (Optional)
-              </label>
-              <input
-                type="url"
-                {...register('amazon_url')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="e.g., https://www.amazon.com/..."
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Website URL (Optional)
-              </label>
-              <input
-                type="url"
-                {...register('website_url')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="e.g., https://www.example.com"
-              />
-            </div>
-          </div>
-          
-          {/* Submit Button */}
-          <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={handleCloseAttempt}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-              disabled={uploading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50"
-              disabled={uploading}
-            >
-              {uploading ? (
-                <span className="flex items-center">
-                  <span className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full"></span>
-                  Creating...
-                </span>
-              ) : (
-                'Create Campaign'
-              )}
-            </button>
-          </div>
-        </form>
+          </form>
         )}
-        
+
         {/* FAQs Tab - Only show if we have a campaign ID */}
-        {activeTab === 'faqs' && campaignId && (
-          <FAQManager campaignId={campaignId} />
+        {activeTab === 'faqs' && (
+          campaignId ? (
+            <FAQManager campaignId={campaignId} />
+          ) : (
+            <div className="py-12 text-center">
+              <div className="bg-blue-50 rounded-lg p-8 max-w-md mx-auto">
+                <div className="mb-4">
+                  <svg className="w-16 h-16 text-blue-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Save Campaign First</h3>
+                <p className="text-gray-600 mb-4">
+                  You need to save your campaign details before you can manage FAQs.
+                </p>
+                <button
+                  onClick={() => setActiveTab('details')}
+                  className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors"
+                >
+                  Go to Campaign Details
+                </button>
+              </div>
+            </div>
+          )
         )}
       </div>
     </div>

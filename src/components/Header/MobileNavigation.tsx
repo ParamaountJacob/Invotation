@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { AlignJustify, X, Plus, User, LogOut, FileText, Bell, Users, HelpCircle } from 'lucide-react';
+import NotificationsDropdown from './NotificationsDropdown';
 
 const MobileNavigation = ({
   isMenuOpen,
@@ -16,7 +17,11 @@ const MobileNavigation = ({
   unreadCount,
   location,
   navigate,
-  handleSignOut
+  handleSignOut,
+  notifications,
+  markNotificationAsRead,
+  markAllAsRead,
+  getNotificationIcon
 }) => {
   return (
     <>
@@ -68,7 +73,7 @@ const MobileNavigation = ({
                 </div>
               </div>
             )}
-            
+
             {!user && (
               <div className="border-b border-gray-200 pb-4 mb-4">
                 <button
@@ -83,9 +88,9 @@ const MobileNavigation = ({
                 </button>
               </div>
             )}
-            
+
             {user && (
-              <div className="border-b border-gray-200 pb-4 mb-4">
+              <div className="border-b border-gray-200 pb-4 mb-4 relative">
                 <button
                   onClick={() => {
                     setShowNotifications(!showNotifications);
@@ -102,40 +107,52 @@ const MobileNavigation = ({
                     </span>
                   )}
                 </button>
+
+                {/* Mobile Notifications Dropdown */}
+                {showNotifications && (
+                  <div className="mt-2 bg-gray-50 rounded-lg border border-gray-200 relative">
+                    <NotificationsDropdown
+                      notifications={notifications}
+                      unreadCount={unreadCount}
+                      markAllAsRead={markAllAsRead}
+                      markNotificationAsRead={markNotificationAsRead}
+                      getNotificationIcon={getNotificationIcon}
+                      navigate={navigate}
+                      setShowNotifications={setShowNotifications}
+                    />
+                  </div>
+                )}
               </div>
             )}
-            
+
             {isAdmin && (
               <Link
                 to="/admin"
-                className={`block text-gray-700 hover:text-primary font-medium transition-colors flex items-center space-x-2 ${
-                  location.pathname === '/admin' ? 'text-primary' : ''
-                }`}
+                className={`block text-gray-700 hover:text-primary font-medium transition-colors flex items-center space-x-2 ${location.pathname === '/admin' ? 'text-primary' : ''
+                  }`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 <Users className="w-5 h-5" />
                 <span>Admin Panel</span>
               </Link>
             )}
-            
+
             <Link
               to="/projects"
-              className={`block text-gray-700 hover:text-primary font-medium transition-colors ${
-                location.pathname.startsWith('/projects') || location.pathname === '/live-campaigns' || location.pathname === '/completed-projects' || location.pathname === '/archives' ? 'text-primary' : ''
-              }`}
+              className={`block text-gray-700 hover:text-primary font-medium transition-colors ${location.pathname.startsWith('/projects') || location.pathname === '/live-campaigns' || location.pathname === '/completed-projects' || location.pathname === '/archives' ? 'text-primary' : ''
+                }`}
               onClick={() => setIsMenuOpen(false)}
             >
               Projects
             </Link>
-            
+
             {/* Conditional mobile navigation based on admin status */}
             {isAdmin ? (
               <>
                 <Link
                   to="/submissions"
-                  className={`block text-gray-700 hover:text-primary font-medium transition-colors flex items-center space-x-2 ${
-                    location.pathname === '/submissions' ? 'text-primary' : ''
-                  }`}
+                  className={`block text-gray-700 hover:text-primary font-medium transition-colors flex items-center space-x-2 ${location.pathname === '/submissions' ? 'text-primary' : ''
+                    }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <FileText className="w-5 h-5" />
@@ -146,20 +163,18 @@ const MobileNavigation = ({
               <>
                 <Link
                   to="/how-it-works"
-                  className={`block text-gray-700 hover:text-primary font-medium transition-colors ${
-                    location.pathname === '/how-it-works' ? 'text-primary' : ''
-                  }`}
+                  className={`block text-gray-700 hover:text-primary font-medium transition-colors ${location.pathname === '/how-it-works' ? 'text-primary' : ''
+                    }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   How It Works
                 </Link>
-                
+
                 {user ? (
                   <Link
                     to="/treasure-hoard"
-                    className={`block text-gray-700 hover:text-primary font-medium transition-colors flex items-center space-x-2 ${
-                      location.pathname === '/treasure-hoard' ? 'text-primary' : ''
-                    }`}
+                    className={`block text-gray-700 hover:text-primary font-medium transition-colors flex items-center space-x-2 ${location.pathname === '/treasure-hoard' ? 'text-primary' : ''
+                      }`}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <User className="w-5 h-5" />
@@ -168,9 +183,8 @@ const MobileNavigation = ({
                 ) : (
                   <Link
                     to="/submissions"
-                    className={`block text-gray-700 hover:text-primary font-medium transition-colors flex items-center space-x-2 ${
-                      location.pathname === '/submissions' ? 'text-primary' : ''
-                    }`}
+                    className={`block text-gray-700 hover:text-primary font-medium transition-colors flex items-center space-x-2 ${location.pathname === '/submissions' ? 'text-primary' : ''
+                      }`}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <User className="w-5 h-5" />
@@ -179,17 +193,16 @@ const MobileNavigation = ({
                 )}
               </>
             )}
-            
+
             <Link
               to="/help"
-              className={`block text-gray-700 hover:text-primary font-medium transition-colors flex items-center space-x-2 ${
-                location.pathname === '/help' ? 'text-primary' : ''
-              }`}
+              className={`block text-gray-700 hover:text-primary font-medium transition-colors flex items-center space-x-2 ${location.pathname === '/help' ? 'text-primary' : ''
+                }`}
               onClick={() => setIsMenuOpen(false)}
             >
               <span>Help</span>
             </Link>
-            
+
             {user && (
               <button
                 onClick={() => {

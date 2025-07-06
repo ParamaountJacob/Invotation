@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Maximize2 } from 'lucide-react';
 
 interface CustomVideoPlayerProps {
@@ -18,7 +18,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({ src, poster, onFu
   // Handle video play/pause
   const togglePlayPause = () => {
     if (!videoRef.current) return;
-    
+
     if (isPlaying) {
       videoRef.current.pause();
     } else {
@@ -37,7 +37,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({ src, poster, onFu
       clearTimeout(controlsTimeoutRef.current);
       controlsTimeoutRef.current = null;
     }
-    
+
     // Auto-play video on hover
     if (videoRef.current) {
       videoRef.current.play().catch(error => {
@@ -52,7 +52,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({ src, poster, onFu
     if (videoRef.current && !isPlaying) {
       videoRef.current.pause();
     }
-    
+
     // Hide controls after delay if video is playing
     if (isPlaying) {
       controlsTimeoutRef.current = setTimeout(() => {
@@ -94,7 +94,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({ src, poster, onFu
   }, []);
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="relative rounded-lg overflow-hidden bg-black"
       onMouseEnter={handleVideoMouseEnter}
@@ -108,16 +108,15 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({ src, poster, onFu
         playsInline
         preload="metadata"
       />
-      
+
       {/* Play/Pause Overlay */}
-      <div 
-        className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
-          showControls || !isPlaying ? 'opacity-100' : 'opacity-0'
-        } ${isPlaying ? 'bg-black/10' : 'bg-black/30'}`}
+      <div
+        className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${showControls || !isPlaying ? 'opacity-100' : 'opacity-0'
+          } ${isPlaying ? 'bg-black/10' : 'bg-black/30'}`}
         onClick={togglePlayPause}
       >
         {(!isPlaying || !isLoaded) && (
-          <button 
+          <button
             className="w-16 h-16 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80 transition-colors"
             onClick={(e) => {
               e.stopPropagation();
@@ -129,12 +128,11 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({ src, poster, onFu
           </button>
         )}
       </div>
-      
+
       {/* Controls Bar */}
-      <div 
-        className={`absolute bottom-0 left-0 right-0 p-3 flex justify-between items-center transition-opacity duration-300 ${
-          showControls ? 'opacity-100' : 'opacity-0'
-        } bg-gradient-to-t from-black/70 to-transparent`}
+      <div
+        className={`absolute bottom-0 left-0 right-0 p-3 flex justify-between items-center transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'
+          } bg-gradient-to-t from-black/70 to-transparent`}
       >
         <button
           onClick={togglePlayPause}
@@ -143,7 +141,7 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({ src, poster, onFu
         >
           {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
         </button>
-        
+
         <button
           onClick={(e) => {
             e.stopPropagation();

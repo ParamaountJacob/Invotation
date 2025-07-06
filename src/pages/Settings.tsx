@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { Profile } from '../types';
 import { Settings as SettingsIcon, User, Mail, AlertCircle, Lock, Upload, X } from 'lucide-react';
 import AvatarCropper from '../components/AvatarCropper';
+import { TIMING } from '../constants';
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -70,13 +71,13 @@ const Settings = () => {
         setError('Please select an image file');
         return;
       }
-      
+
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError('Image must be smaller than 5MB');
         return;
       }
-      
+
       setSelectedFile(file);
       setShowCropper(true);
     }
@@ -85,11 +86,11 @@ const Settings = () => {
   const handleCropSave = async (croppedBlob: Blob) => {
     setShowCropper(false);
     setSelectedFile(null);
-    
+
     // Convert blob to file
     const croppedFile = new File([croppedBlob], 'avatar.jpg', { type: 'image/jpeg' });
     setAvatarFile(croppedFile);
-    
+
     // Create preview URL
     const preview = URL.createObjectURL(croppedBlob);
     setAvatarPreview(preview);
@@ -102,39 +103,39 @@ const Settings = () => {
 
   const uploadAvatar = async () => {
     if (!avatarFile || !profile) return;
-    
+
     setUploadingAvatar(true);
     setError(null);
-    
+
     try {
       const fileExt = avatarFile.name.split('.').pop();
       const fileName = `avatar-${Date.now()}.${fileExt}`;
       const filePath = `${profile.id}/${fileName}`;
-      
+
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, avatarFile, { upsert: true });
-      
+
       if (uploadError) throw uploadError;
-      
+
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
-      
+
       // Update profile with new avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
         .eq('id', profile.id);
-      
+
       if (updateError) throw updateError;
-      
+
       setFormData(prev => ({ ...prev, avatar_url: publicUrl }));
       setAvatarFile(null);
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      setTimeout(() => setSuccess(false), TIMING.SUCCESS_MESSAGE_TIMEOUT);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -161,7 +162,7 @@ const Settings = () => {
 
       if (error) throw error;
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      setTimeout(() => setSuccess(false), TIMING.SUCCESS_MESSAGE_TIMEOUT);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -204,7 +205,7 @@ const Settings = () => {
         newPassword: '',
         confirmPassword: ''
       });
-      setTimeout(() => setPasswordSuccess(false), 3000);
+      setTimeout(() => setPasswordSuccess(false), TIMING.SUCCESS_MESSAGE_TIMEOUT);
     } catch (err: any) {
       setPasswordError(err.message);
     }
@@ -252,7 +253,7 @@ const Settings = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-4">
                     Profile Picture
                   </label>
-                  
+
                   <div className="flex items-center space-x-6">
                     {/* Current Avatar Display */}
                     <div className="relative">
@@ -270,7 +271,7 @@ const Settings = () => {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Upload Controls */}
                     <div className="flex-1">
                       <div className="flex items-center space-x-4">
@@ -305,7 +306,7 @@ const Settings = () => {
                           </>
                         )}
                       </div>
-                        
+
                       <p className="text-sm text-gray-500 mt-2">
                         Upload a photo (JPG, PNG, GIF up to 5MB)
                       </p>
@@ -313,7 +314,7 @@ const Settings = () => {
                   </div>
                 </div>
               )}
-              
+
               {profile?.is_admin && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-4">
@@ -382,7 +383,7 @@ const Settings = () => {
               </div>
             </form>
           </div>
-          
+
           <div className="mt-8 bg-white rounded-xl shadow-lg p-8">
             <div className="flex items-center space-x-4 mb-6">
               <Lock className="w-6 h-6 text-primary" />
@@ -445,7 +446,7 @@ const Settings = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Avatar Cropper Modal */}
       {showCropper && selectedFile && (
         <AvatarCropper

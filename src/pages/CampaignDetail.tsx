@@ -1,15 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { supportCampaign } from '../lib/campaigns';
 import { useCoin } from '../context/CoinContext';
+import { UI } from '../constants';
 import {
-  ArrowLeft, 
-  Users, 
-  TrendingUp, 
-  DollarSign, 
-  Trophy, 
-  Medal, 
-  Award, 
+  ArrowLeft,
+  Users,
+  TrendingUp,
+  DollarSign,
+  Trophy,
+  Medal,
+  Award,
   ExternalLink,
   Calendar,
   Target,
@@ -28,6 +30,7 @@ import FundingBanner from '../components/campaign/FundingBanner';
 import CampaignContent from '../components/campaign/CampaignContent';
 import SupportTiers from '../components/campaign/SupportTiers';
 import StickyFooter from '../components/campaign/StickyFooter';
+import AuthModal from '../components/Header/AuthModal';
 import MediaModal from '../components/MediaModal';
 import AllOrNothingModal from '../components/AllOrNothingModal';
 import { ContentBlock } from '../components/campaign/RichTextRenderer'; // Import the type
@@ -51,6 +54,7 @@ const CampaignDetail = () => {
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [showAllOrNothingModal, setShowAllOrNothingModal] = useState(false);
   const [showCoinSpendingVideo, setShowCoinSpendingVideo] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [daysLeft, setDaysLeft] = useState(0);
 
   const parseDescriptionStringToBlocks = useCallback((description: string): ContentBlock[] => {
@@ -70,10 +74,10 @@ const CampaignDetail = () => {
     if (!id) return;
     try {
       setLoading(true);
-      
+
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       setUser(currentUser);
-      
+
       const { data: campaignData, error: campaignError } = await supabase
         .from('campaigns')
         .select('*')
@@ -87,7 +91,7 @@ const CampaignDetail = () => {
         const blocks = parseDescriptionStringToBlocks(campaignData.description);
         setDescriptionBlocks(blocks);
       }
-      
+
       // --- ALL DATA FETCHING LOGIC IS NOW RESTORED ---
       const { data: supportersData, error: supportersError } = await supabase
         .from('campaign_supporters')
@@ -138,15 +142,16 @@ const CampaignDetail = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setShowStickyFooter(window.scrollY > 300);
+      setShowStickyFooter(window.scrollY > UI.SCROLL_THRESHOLD_STICKY);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-  
+
   const handleSupport = async () => {
     if (!user) {
-      // Redirect to login or show login modal
+      // Show authentication modal when user is not logged in
+      setShowAuthModal(true);
       return;
     }
 
@@ -208,9 +213,9 @@ const CampaignDetail = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <CampaignHeader 
-        campaign={campaign} 
-        setShowImageModal={setShowImageModal} 
+      <CampaignHeader
+        campaign={campaign}
+        setShowImageModal={setShowImageModal}
         setShowVideoModal={setShowVideoModal}
         user={user}
         userSupport={userSupport}
@@ -220,14 +225,14 @@ const CampaignDetail = () => {
         isSupporting={isSupporting}
         handleSupport={handleSupport}
       />
-      
+
       <FundingBanner daysLeft={daysLeft} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            <CampaignContent 
-              descriptionBlocks={descriptionBlocks} 
+            <CampaignContent
+              descriptionBlocks={descriptionBlocks}
               campaign={campaign}
               comments={comments}
               fetchCampaignData={fetchCampaignData}
@@ -264,7 +269,7 @@ const CampaignDetail = () => {
       {showAllOrNothingModal && <AllOrNothingModal isOpen={showAllOrNothingModal} onClose={() => setShowAllOrNothingModal(false)} />}
       {showImageModal && <MediaModal isOpen={showImageModal} type="image" src={campaign.image} title={campaign.title} onClose={() => setShowImageModal(false)} />}
       {showVideoModal && campaign.videoUrl && <MediaModal isOpen={showVideoModal} type="video" src={campaign.videoUrl} title={campaign.title} onClose={() => setShowVideoModal(false)} />}
-      
+
       {/* Coin Spending Celebration Video */}
       {showCoinSpendingVideo && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] animate-fade-in">
@@ -279,7 +284,7 @@ const CampaignDetail = () => {
             >
               <source src="https://res.cloudinary.com/digjsdron/video/upload/v1749612635/Coin_Spending_g8wd9v.mp4" type="video/mp4" />
             </video>
-            
+
             <button
               onClick={() => {
                 setShowCoinSpendingVideo(false);
@@ -288,7 +293,7 @@ const CampaignDetail = () => {
             >
               ×
             </button>
-            
+
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-6">
               <div className="text-center text-white">
                 <h3 className="text-xl font-bold mb-2 animate-fade-in">Support Successful! 🎉</h3>
@@ -300,6 +305,12 @@ const CampaignDetail = () => {
           </div>
         </div>
       )}
+
+      {/* Auth Modal */}
+      <AuthModal
+        showAuthModal={showAuthModal}
+        setShowAuthModal={setShowAuthModal}
+      />
     </div>
   );
 };

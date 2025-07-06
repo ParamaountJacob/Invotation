@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Submission, Profile, Message } from '../types';
 import { useCoin } from '../context/CoinContext';
-import { 
+import { useErrorHandler } from '../hooks/useErrorHandler';
+import {
   AdminOverview,
   UserManagement,
   SubmissionReview,
@@ -32,8 +33,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
+
   // Data states
   const [users, setUsers] = useState<Profile[]>([]);
   const [submissions, setSubmissions] = useState<(Submission & { profile: Profile })[]>([]);
@@ -41,6 +41,7 @@ const AdminDashboard = () => {
   const [messages, setMessages] = useState<(Message & { fromProfile: Profile; toProfile: Profile })[]>([]);
   const { refreshCoins } = useCoin();
   const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const { error, handleError, clearError } = useErrorHandler();
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalSubmissions: 0,
@@ -83,8 +84,8 @@ const AdminDashboard = () => {
       // Refresh coins to ensure admin has latest data
       await refreshCoins();
       await fetchAllData();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      handleError(err, 'Failed to initialize admin dashboard');
     } finally {
       setLoading(false);
     }
@@ -134,8 +135,8 @@ const AdminDashboard = () => {
         recentActivity: [] // Would be populated with real activity data
       });
 
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      handleError(err, 'Failed to load admin data');
     }
   };
 
@@ -158,8 +159,8 @@ const AdminDashboard = () => {
       });
 
       await fetchAllData();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      handleError(err, 'Failed to update submission status');
     }
   };
 
@@ -248,7 +249,7 @@ const AdminDashboard = () => {
   const handleCampaignStatusChange = async (campaignId: number, status: string) => {
     try {
       const updates: any = {};
-      
+
       if (status === 'archived') {
         updates.is_archived = true;
       } else if (status === 'live') {
@@ -284,12 +285,12 @@ const AdminDashboard = () => {
     );
   }
 
-  if (error) {
+  if (error.isVisible && error.message) {
     return (
       <div className="min-h-screen bg-gray-50 pt-24">
         <div className="container-custom py-12">
           <div className="text-center text-red-600">
-            <p>Error loading dashboard: {error}</p>
+            <p>Error loading dashboard: {error.message}</p>
           </div>
         </div>
       </div>
@@ -322,11 +323,10 @@ const AdminDashboard = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as TabType)}
-                    className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                      activeTab === tab.id
-                        ? 'border-primary text-primary'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
+                    className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
                   >
                     {tab.label}
                   </button>
@@ -344,6 +344,7 @@ const AdminDashboard = () => {
                 submissions={submissions}
                 onSubmissionClick={handleSubmissionClick}
                 onStatusUpdate={handleStatusUpdate}
+                onRefreshData={fetchAllData}
               />
             )}
             {activeTab === 'campaigns' && (
@@ -368,9 +369,9 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Campaign Creation Modal */}
-      <CampaignFormModal 
+      <CampaignFormModal
         isOpen={showCampaignModal}
         onClose={() => setShowCampaignModal(false)}
         onSuccess={fetchAllData}

@@ -23,13 +23,13 @@ const Help = () => {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUser(user);
     };
-    
+
     getCurrentUser();
   }, []);
 
   const handleStartChat = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       setShowLoginModal(true);
     } else {
@@ -41,13 +41,13 @@ const Help = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
-      
+
       if (error) throw error;
       setShowLoginModal(false);
       setContactMethod('chat');
@@ -138,16 +138,16 @@ const Help = () => {
 
   // Arrow right icon component
   const ArrowRight = (props: any) => (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="24" 
-      height="24" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       {...props}
     >
       <path d="M5 12h14" />
@@ -177,11 +177,14 @@ const Help = () => {
           {/* Common Issues Section */}
           <div className="bg-white rounded-xl shadow-lg p-8 mb-12">
             <h2 className="text-2xl font-bold mb-6">How Can We Help You?</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div 
+              <div
                 className="bg-red-50 rounded-xl p-6 border border-red-100 hover:shadow-md transition-all cursor-pointer"
-                onClick={() => setContactMethod('email')}
+                onClick={() => {
+                  setContactMethod('email');
+                  setShowContactModal(true);
+                }}
               >
                 <div className="flex items-center mb-4">
                   <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
@@ -207,10 +210,13 @@ const Help = () => {
                   </li>
                 </ul>
               </div>
-              
-              <div 
+
+              <div
                 className="bg-blue-50 rounded-xl p-6 border border-blue-100 hover:shadow-md transition-all cursor-pointer"
-                onClick={() => setContactMethod('phone')}
+                onClick={() => {
+                  setContactMethod('phone');
+                  setShowContactModal(true);
+                }}
               >
                 <div className="flex items-center mb-4">
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
@@ -237,7 +243,7 @@ const Help = () => {
                 </ul>
               </div>
             </div>
-            
+
             <div className="mt-8 text-center">
               <button
                 onClick={handleStartChat}
@@ -255,7 +261,7 @@ const Help = () => {
           {/* FAQ Accordion */}
           <div className="bg-white rounded-xl shadow-lg p-8 mb-12">
             <h2 className="text-2xl font-bold mb-6">Frequently Asked Questions</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               {/* Category Sidebar */}
               <div className="md:col-span-1">
@@ -264,11 +270,10 @@ const Help = () => {
                     <button
                       key={category.id}
                       onClick={() => setActiveCategory(activeCategory === category.id ? null : category.id)}
-                      className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors ${
-                        activeCategory === category.id
+                      className={`w-full text-left px-4 py-3 rounded-lg flex items-center transition-colors ${activeCategory === category.id
                           ? 'bg-primary text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+                        }`}
                     >
                       <span className="mr-3">{category.icon}</span>
                       <span className="font-medium">{category.title}</span>
@@ -276,7 +281,7 @@ const Help = () => {
                   ))}
                 </div>
               </div>
-              
+
               {/* FAQ Content */}
               <div className="md:col-span-3">
                 {activeCategory ? (
@@ -300,7 +305,7 @@ const Help = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Contact Options */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-all">
@@ -313,7 +318,7 @@ const Help = () => {
               <p className="text-gray-600 mb-4">
                 Get a response within 24 hours to your questions or concerns.
               </p>
-              <a 
+              <a
                 href="mailto:hello@invotation.com"
                 className="text-primary hover:text-primary-dark font-medium flex items-center"
               >
@@ -322,101 +327,101 @@ const Help = () => {
               </a>
             </div>
 
-                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-all">
-                  <div className="flex items-center space-x-4 mb-4">
-                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                      <Phone className="w-6 h-6 text-green-600" />
-                    </div>
-                    <h3 className="text-xl font-bold">Phone Support</h3>
-                  </div>
-                  <p className="text-gray-600 mb-4">
-                    Speak directly with our support team for urgent matters.
-                  </p>
-                  <a 
-                    href="tel:+13462661456"
-                    className="text-primary hover:text-primary-dark font-medium flex items-center"
-                  >
-                    (346) 266-1456
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </a>
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-all">
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <Phone className="w-6 h-6 text-green-600" />
                 </div>
-
-                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-all">
-                  <div className="flex items-center space-x-4 mb-4">
-                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                      <MessageSquare className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <h3 className="text-xl font-bold">Message Support</h3>
-                  </div>
-                  <p className="text-gray-600 mb-4">
-                    Send a message to our support team and get a response in your inbox.
-                  </p>
-                  <button 
-                    onClick={handleStartChat}
-                    className="text-primary hover:text-primary-dark font-medium flex items-center"
-                  >
-                    Start Conversation
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </button>
-                </div>
+                <h3 className="text-xl font-bold">Phone Support</h3>
               </div>
-              
-              {/* Support Guides */}
-              <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-8 border border-primary/20">
-                <h2 className="text-2xl font-bold mb-6 text-center">Support Guides</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="bg-white rounded-xl p-6 shadow-sm">
-                    <h3 className="text-lg font-bold mb-4">For Inventors</h3>
-                    <ul className="space-y-3">
-                      <li className="flex items-start">
-                        <CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                        <a href="/submission-tips" className="text-primary hover:underline">
-                          Submission Guidelines & Tips
-                        </a>
-                      </li>
-                      <li className="flex items-start">
-                        <CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                        <a href="/how-it-works" className="text-primary hover:underline">
-                          Development Process Explained
-                        </a>
-                      </li>
-                      <li className="flex items-start">
-                        <CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                        <a href="/how-it-works" className="text-primary hover:underline">
-                          Profit Sharing & Royalties
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                  
-                  <div className="bg-white rounded-xl p-6 shadow-sm">
-                    <h3 className="text-lg font-bold mb-4">For Supporters</h3>
-                    <ul className="space-y-3">
-                      <li className="flex items-start">
-                        <CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                        <a href="/buy-coins" className="text-primary hover:underline">
-                          Coin Purchasing Guide
-                        </a>
-                      </li>
-                      <li className="flex items-start">
-                        <CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                        <a href="/projects" className="text-primary hover:underline">
-                          How Voting & Discounts Work
-                        </a>
-                      </li>
-                      <li className="flex items-start">
-                        <CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                        <a href="/completed-projects" className="text-primary hover:underline">
-                          Redeeming Your Discounts
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
+              <p className="text-gray-600 mb-4">
+                Speak directly with our support team for urgent matters.
+              </p>
+              <a
+                href="tel:+13462661456"
+                className="text-primary hover:text-primary-dark font-medium flex items-center"
+              >
+                (346) 266-1456
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </a>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-all">
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                  <MessageSquare className="w-6 h-6 text-purple-600" />
                 </div>
+                <h3 className="text-xl font-bold">Message Support</h3>
+              </div>
+              <p className="text-gray-600 mb-4">
+                Send a message to our support team and get a response in your inbox.
+              </p>
+              <button
+                onClick={handleStartChat}
+                className="text-primary hover:text-primary-dark font-medium flex items-center"
+              >
+                Start Conversation
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </button>
+            </div>
+          </div>
+
+          {/* Support Guides */}
+          <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-8 border border-primary/20">
+            <h2 className="text-2xl font-bold mb-6 text-center">Support Guides</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <h3 className="text-lg font-bold mb-4">For Inventors</h3>
+                <ul className="space-y-3">
+                  <li className="flex items-start">
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <a href="/submission-tips" className="text-primary hover:underline">
+                      Submission Guidelines & Tips
+                    </a>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <a href="/how-it-works" className="text-primary hover:underline">
+                      Development Process Explained
+                    </a>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <a href="/how-it-works" className="text-primary hover:underline">
+                      Profit Sharing & Royalties
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <h3 className="text-lg font-bold mb-4">For Supporters</h3>
+                <ul className="space-y-3">
+                  <li className="flex items-start">
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <a href="/buy-coins" className="text-primary hover:underline">
+                      Coin Purchasing Guide
+                    </a>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <a href="/projects" className="text-primary hover:underline">
+                      How Voting & Discounts Work
+                    </a>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
+                    <a href="/completed-projects" className="text-primary hover:underline">
+                      Redeeming Your Discounts
+                    </a>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
-      
+        </div>
+      </div>
+
       {/* Contact Method Modal */}
       {showMessagingModal && currentUser && (
         <MessagingModal
@@ -426,15 +431,15 @@ const Help = () => {
           currentUser={currentUser}
         />
       )}
-      
+
       {/* Contact Method Modal */}
       {showContactModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold">
-                {contactMethod === 'email' ? 'Email Support' : 
-                 contactMethod === 'phone' ? 'Phone Support' : 'Live Chat'}
+                {contactMethod === 'email' ? 'Email Support' :
+                  contactMethod === 'phone' ? 'Phone Support' : 'Live Chat'}
               </h2>
               <button
                 onClick={() => setShowContactModal(false)}
@@ -443,7 +448,7 @@ const Help = () => {
                 <X size={24} />
               </button>
             </div>
-            
+
             {contactMethod === 'email' && (
               <div>
                 <p className="mb-6 text-gray-600">
@@ -451,14 +456,14 @@ const Help = () => {
                 </p>
                 <div className="bg-blue-50 rounded-lg p-4 mb-6 flex items-center">
                   <Mail className="w-5 h-5 text-blue-600 mr-3 flex-shrink-0" />
-                  <a 
-                    href="mailto:hello@invotation.com" 
+                  <a
+                    href="mailto:hello@invotation.com"
                     className="text-blue-700 font-medium"
                   >
                     hello@invotation.com
                   </a>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-4 mb-6">
                   <p className="text-gray-600 text-sm">Please include:</p>
                   <ul className="space-y-2 text-sm text-gray-600">
                     <li className="flex items-start">
@@ -479,9 +484,46 @@ const Help = () => {
                     </li>
                   </ul>
                 </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
+                      const emailSubject = encodeURIComponent('Invotation Support Request');
+                      const emailBody = encodeURIComponent(`Hello,
+
+I need help with the following issue:
+
+[Please describe your issue here]
+
+Account Email: ${currentUser?.email || '[Your email]'}
+Order/Submission ID: [If applicable]
+
+Thank you!`);
+                      window.open(`mailto:hello@invotation.com?subject=${emailSubject}&body=${emailBody}`, '_blank');
+                    }}
+                    className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors flex items-center justify-center"
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Open Email App
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText('hello@invotation.com');
+                      // Show temporary feedback (could add toast notification here)
+                      const button = event?.target as HTMLButtonElement;
+                      const originalText = button.textContent;
+                      button.textContent = 'Copied!';
+                      setTimeout(() => {
+                        button.textContent = originalText;
+                      }, 2000);
+                    }}
+                    className="px-4 py-3 border border-blue-600 text-blue-600 rounded-xl font-medium hover:bg-blue-50 transition-colors"
+                  >
+                    Copy Email
+                  </button>
+                </div>
               </div>
             )}
-            
+
             {contactMethod === 'phone' && (
               <div>
                 <p className="mb-6 text-gray-600">
@@ -489,14 +531,14 @@ const Help = () => {
                 </p>
                 <div className="bg-green-50 rounded-lg p-4 mb-6 flex items-center">
                   <Phone className="w-5 h-5 text-green-600 mr-3 flex-shrink-0" />
-                  <a 
-                    href="tel:+13462661456" 
+                  <a
+                    href="tel:+13462661456"
                     className="text-green-700 font-medium"
                   >
                     (346) 266-1456
                   </a>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-4 mb-6">
                   <p className="text-gray-600 text-sm">Support hours:</p>
                   <ul className="space-y-2 text-sm text-gray-600">
                     <li className="flex items-start">
@@ -512,9 +554,35 @@ const Help = () => {
                     Please have your account email ready when you call.
                   </p>
                 </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
+                      window.open('tel:+13462661456', '_self');
+                    }}
+                    className="flex-1 bg-green-600 text-white py-3 rounded-xl font-medium hover:bg-green-700 transition-colors flex items-center justify-center"
+                  >
+                    <Phone className="w-4 h-4 mr-2" />
+                    Call Now
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText('(346) 266-1456');
+                      // Show temporary feedback
+                      const button = event?.target as HTMLButtonElement;
+                      const originalText = button.textContent;
+                      button.textContent = 'Copied!';
+                      setTimeout(() => {
+                        button.textContent = originalText;
+                      }, 2000);
+                    }}
+                    className="px-4 py-3 border border-green-600 text-green-600 rounded-xl font-medium hover:bg-green-50 transition-colors"
+                  >
+                    Copy Number
+                  </button>
+                </div>
               </div>
             )}
-            
+
             {contactMethod === 'chat' && (
               <div>
                 <p className="mb-6 text-gray-600">
@@ -542,7 +610,7 @@ const Help = () => {
                           .eq('email', 'invotation@gmail.com')  // Preferably get the super admin
                           .limit(1)
                           .single();
-                        
+
                         if (adminUser) {
                           setShowMessagingModal(true);
                           setSelectedUserId(adminUser.id);
@@ -554,7 +622,7 @@ const Help = () => {
                             .eq('is_admin', true)
                             .limit(1)
                             .single();
-                            
+
                           if (anyAdmin) {
                             setShowMessagingModal(true);
                             setSelectedUserId(anyAdmin.id);
@@ -567,7 +635,7 @@ const Help = () => {
                         setError('Error connecting to chat. Please try email support.');
                       }
                     };
-                    
+
                     getAdminId();
                     setShowContactModal(false);
                   }}
@@ -579,7 +647,7 @@ const Help = () => {
           </div>
         </div>
       )}
-      
+
       {/* Login Modal */}
       {showLoginModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
@@ -593,17 +661,17 @@ const Help = () => {
                 <X size={24} />
               </button>
             </div>
-            
+
             <p className="mb-6 text-gray-600">
               Please sign in to start a chat with our support team.
             </p>
-            
+
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
                 {error}
               </div>
             )}
-            
+
             <form onSubmit={handleSignIn} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -617,7 +685,7 @@ const Help = () => {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Password
@@ -630,7 +698,7 @@ const Help = () => {
                   required
                 />
               </div>
-              
+
               <button
                 type="submit"
                 className="w-full bg-primary text-white py-2 rounded-lg font-medium hover:bg-primary-dark transition-colors"
@@ -638,7 +706,7 @@ const Help = () => {
                 Sign In
               </button>
             </form>
-            
+
             <div className="mt-4 text-center">
               <p className="text-sm text-gray-600">
                 Don't have an account?{' '}

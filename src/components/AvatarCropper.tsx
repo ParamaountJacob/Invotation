@@ -1,5 +1,6 @@
-import React, { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { X, RotateCcw, ZoomIn, ZoomOut, Move } from 'lucide-react';
+import { imageLogger } from '../utils/logger';
 
 interface AvatarCropperProps {
   imageFile: File;
@@ -28,19 +29,19 @@ const AvatarCropper: React.FC<AvatarCropperProps> = ({ imageFile, onSave, onCanc
     if (imageRef.current) {
       const img = imageRef.current;
       const containerSize = 320; // Match the w-80 h-80 (320px) container size
-      
+
       // Calculate scale to ensure the image covers the circular crop area
       // We want the smaller dimension to fill the circle
       const scaleX = containerSize / img.naturalWidth;
       const scaleY = containerSize / img.naturalHeight;
       const initialScale = Math.min(scaleX, scaleY) * 1.2; // Use min to fit the image, with slight zoom
-      
+
       setScale(initialScale);
-      
+
       setPosition({ x: 0, y: 0 });
-      
+
       // Log values to help with debugging
-      console.log('Image loaded:', {
+      imageLogger.debug('Image loaded:', {
         naturalWidth: img.naturalWidth,
         naturalHeight: img.naturalHeight,
         containerSize,
@@ -61,7 +62,7 @@ const AvatarCropper: React.FC<AvatarCropperProps> = ({ imageFile, onSave, onCanc
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
-    
+
     setPosition({
       x: e.clientX - dragStart.x,
       y: e.clientY - dragStart.y
@@ -143,7 +144,7 @@ const AvatarCropper: React.FC<AvatarCropperProps> = ({ imageFile, onSave, onCanc
 
         {/* Preview Area */}
         <div className="mb-6">
-          <div 
+          <div
             className="relative w-80 h-80 mx-auto bg-gray-100 rounded-full overflow-hidden border-4 border-gray-200 cursor-move"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -168,7 +169,7 @@ const AvatarCropper: React.FC<AvatarCropperProps> = ({ imageFile, onSave, onCanc
                 draggable={false}
               />
             )}
-            
+
             {/* Overlay instructions */}
             {imageLoaded && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -191,7 +192,7 @@ const AvatarCropper: React.FC<AvatarCropperProps> = ({ imageFile, onSave, onCanc
             >
               <ZoomOut className="w-5 h-5 text-gray-600" />
             </button>
-            
+
             <div className="flex-1 mx-4">
               <input
                 type="range"
@@ -203,7 +204,7 @@ const AvatarCropper: React.FC<AvatarCropperProps> = ({ imageFile, onSave, onCanc
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
               />
             </div>
-            
+
             <button
               onClick={handleZoomIn}
               className="p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
@@ -212,7 +213,7 @@ const AvatarCropper: React.FC<AvatarCropperProps> = ({ imageFile, onSave, onCanc
               <ZoomIn className="w-5 h-5 text-gray-600" />
             </button>
           </div>
-          
+
           <div className="text-center">
             <button
               onClick={handleReset}

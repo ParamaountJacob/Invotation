@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { Plus, Trash2, Save, X, HelpCircle } from 'lucide-react';
+import { useErrorHandler } from '../../../hooks/useErrorHandler';
+import { TIMING } from '../../../constants';
 
 interface FAQ {
   id?: string;
@@ -16,7 +18,6 @@ interface FAQManagerProps {
 const FAQManager: React.FC<FAQManagerProps> = ({ campaignId }) => {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [newFaq, setNewFaq] = useState<FAQ>({
     campaign_id: campaignId,
@@ -26,6 +27,8 @@ const FAQManager: React.FC<FAQManagerProps> = ({ campaignId }) => {
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const { error, handleError, clearError } = useErrorHandler();
+
   useEffect(() => {
     fetchFaqs();
   }, [campaignId]);
@@ -33,6 +36,7 @@ const FAQManager: React.FC<FAQManagerProps> = ({ campaignId }) => {
   const fetchFaqs = async () => {
     try {
       setLoading(true);
+      clearError();
       const { data, error } = await supabase
         .from('campaign_faqs')
         .select('*')
@@ -41,9 +45,8 @@ const FAQManager: React.FC<FAQManagerProps> = ({ campaignId }) => {
 
       if (error) throw error;
       setFaqs(data || []);
-    } catch (err: any) {
-      console.error('Error fetching FAQs:', err);
-      setError(err.message);
+    } catch (err) {
+      handleError(err, 'Failed to load FAQs');
     } finally {
       setLoading(false);
     }
@@ -70,18 +73,18 @@ const FAQManager: React.FC<FAQManagerProps> = ({ campaignId }) => {
   const handleSaveNew = async () => {
     try {
       if (!newFaq.question.trim() || !newFaq.answer.trim()) {
-        setError('Question and answer are required');
+        handleError('Question and answer are required');
         return;
       }
 
-      setError(null);
+      clearError();
       const { data, error } = await supabase
         .from('campaign_faqs')
         .insert([newFaq])
         .select();
 
       if (error) throw error;
-      
+
       setFaqs([...faqs, data[0]]);
       setIsAddingNew(false);
       setNewFaq({
@@ -90,10 +93,9 @@ const FAQManager: React.FC<FAQManagerProps> = ({ campaignId }) => {
         answer: ''
       });
       setSuccess('FAQ added successfully');
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err: any) {
-      console.error('Error adding FAQ:', err);
-      setError(err.message);
+      setTimeout(() => setSuccess(null), TIMING.SUCCESS_MESSAGE_TIMEOUT);
+    } catch (err) {
+      handleError(err, 'Failed to add FAQ');
     }
   };
 
@@ -108,11 +110,11 @@ const FAQManager: React.FC<FAQManagerProps> = ({ campaignId }) => {
   const handleUpdateFaq = async (faq: FAQ) => {
     try {
       if (!faq.question.trim() || !faq.answer.trim()) {
-        setError('Question and answer are required');
+        handleError('Question and answer are required');
         return;
       }
 
-      setError(null);
+      clearError();
       const { error } = await supabase
         .from('campaign_faqs')
         .update({
@@ -122,42 +124,40 @@ const FAQManager: React.FC<FAQManagerProps> = ({ campaignId }) => {
         .eq('id', faq.id);
 
       if (error) throw error;
-      
+
       setFaqs(faqs.map(f => f.id === faq.id ? faq : f));
       setEditingId(null);
       setSuccess('FAQ updated successfully');
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err: any) {
-      console.error('Error updating FAQ:', err);
-      setError(err.message);
+      setTimeout(() => setSuccess(null), TIMING.SUCCESS_MESSAGE_TIMEOUT);
+    } catch (err) {
+      handleError(err, 'Failed to update FAQ');
     }
   };
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this FAQ?')) return;
-    
+
     try {
-      setError(null);
+      clearError();
       const { error } = await supabase
         .from('campaign_faqs')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
-      
+
       setFaqs(faqs.filter(faq => faq.id !== id));
       setSuccess('FAQ deleted successfully');
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err: any) {
-      console.error('Error deleting FAQ:', err);
-      setError(err.message);
+      setTimeout(() => setSuccess(null), TIMING.SUCCESS_MESSAGE_TIMEOUT);
+    } catch (err) {
+      handleError(err, 'Failed to delete FAQ');
     }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, field: 'question' | 'answer', faqId?: string) => {
     if (faqId) {
       // Editing existing FAQ
-      setFaqs(faqs.map(faq => 
+      setFaqs(faqs.map(faq =>
         faq.id === faqId ? { ...faq, [field]: e.target.value } : faq
       ));
     } else {
@@ -188,9 +188,9 @@ const FAQManager: React.FC<FAQManagerProps> = ({ campaignId }) => {
         </button>
       </div>
 
-      {error && (
+      {error.isVisible && error.message && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          {error}
+          {error.message}
         </div>
       )}
 
@@ -258,8 +258,8 @@ const FAQManager: React.FC<FAQManagerProps> = ({ campaignId }) => {
       ) : (
         <div className="space-y-4">
           {faqs.map((faq) => (
-            <div 
-              key={faq.id} 
+            <div
+              key={faq.id}
               className="border border-gray-200 rounded-lg overflow-hidden"
             >
               {editingId === faq.id ? (

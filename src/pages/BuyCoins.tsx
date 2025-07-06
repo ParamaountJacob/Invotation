@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useCoin } from '../context/CoinContext';
 import { stripeConfig } from '../stripe-config';
 import { createCheckoutSession } from '../lib/stripe';
+import AuthModal from '../components/Header/AuthModal';
 
 const BuyCoins = () => {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ const BuyCoins = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      
+
       if (currentUser) {
         // Check if user is admin
         supabase
@@ -98,7 +99,7 @@ const BuyCoins = () => {
   const handleSuccessClose = () => {
     setShowSuccessModal(false);
     setPurchasedCoins(0);
-    
+
     // Check if there's a pending support action
     const pendingSupport = sessionStorage.getItem('pendingSupport');
     if (pendingSupport) {
@@ -111,13 +112,13 @@ const BuyCoins = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
-      
+
       if (error) throw error;
       setShowAuthModal(false);
       setEmail('');
@@ -130,13 +131,13 @@ const BuyCoins = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     try {
       const { error } = await supabase.auth.signUp({
         email,
         password
       });
-      
+
       if (error) throw error;
       setShowAuthModal(false);
       setEmail('');
@@ -193,9 +194,8 @@ const BuyCoins = () => {
               {stripeConfig.products.map((pkg) => (
                 <div
                   key={pkg.id}
-                  className={`relative group cursor-pointer transition-all duration-300 hover:scale-105 ${
-                    pkg.popular ? 'transform scale-105' : ''
-                  }`}
+                  className={`relative group cursor-pointer transition-all duration-300 hover:scale-105 ${pkg.popular ? 'transform scale-105' : ''
+                    }`}
                   onClick={() => handlePurchase(pkg.priceId)}
                 >
                   {pkg.popular && (
@@ -205,15 +205,14 @@ const BuyCoins = () => {
                       </span>
                     </div>
                   )}
-                  
-                  <div className={`relative bg-white rounded-2xl p-4 md:p-6 text-center shadow-xl transition-all duration-300 group-hover:shadow-2xl group-hover:bg-gray-50 ${
-                    pkg.popular ? 'ring-2 ring-primary shadow-primary/25' : ''
-                  } ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
+
+                  <div className={`relative bg-white rounded-2xl p-4 md:p-6 text-center shadow-xl transition-all duration-300 group-hover:shadow-2xl group-hover:bg-gray-50 ${pkg.popular ? 'ring-2 ring-primary shadow-primary/25' : ''
+                    } ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
                     {/* Plus symbol in top right */}
                     <div className="absolute top-4 right-4 w-8 h-8 md:w-10 md:h-10 bg-primary rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                       <Plus className="w-4 h-4 md:w-5 md:h-5 text-white" />
                     </div>
-                    
+
                     {/* Coin Image */}
                     <div className="mb-8 md:mb-10 h-32 md:h-40 flex items-center justify-center">
                       <img
@@ -223,7 +222,7 @@ const BuyCoins = () => {
                         loading="lazy"
                       />
                     </div>
-                    
+
                     <div className="mb-6 md:mb-8">
                       <div className="text-4xl md:text-5xl font-black text-gray-900 mb-2">
                         {pkg.coins}+
@@ -232,7 +231,7 @@ const BuyCoins = () => {
                         coin{pkg.coins > 1 ? 's' : ''}
                       </div>
                     </div>
-                    
+
                     <div className="mb-8 md:mb-10">
                       <div className="text-3xl md:text-4xl font-black text-primary mb-2">
                         ${pkg.price.toFixed(2)}
@@ -241,7 +240,7 @@ const BuyCoins = () => {
                         ${(pkg.price / pkg.coins).toFixed(2)} per coin
                       </div>
                     </div>
-                    
+
                     <div className="w-full bg-gradient-to-r from-primary to-primary-dark text-white py-4 md:py-5 rounded-xl font-bold text-lg md:text-xl group-hover:from-primary-dark group-hover:to-primary transition-all duration-300 shadow-lg cursor-pointer">
                       {loading ? 'Processing...' : 'Purchase'}
                     </div>
@@ -264,7 +263,7 @@ const BuyCoins = () => {
                 <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">Secure Your Position</h3>
                 <p className="text-gray-300 text-base md:text-lg leading-relaxed">Buy coins to vote on ideas you love. More coins = higher position = bigger discount when the product launches.</p>
               </div>
-              
+
               <div className="text-center group">
                 <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-primary to-primary-dark rounded-xl flex items-center justify-center mx-auto mb-4 md:mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
                   <span className="text-xl md:text-2xl font-black text-white">2</span>
@@ -272,7 +271,7 @@ const BuyCoins = () => {
                 <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">Lock In Savings</h3>
                 <p className="text-gray-300 text-base md:text-lg leading-relaxed">Top supporters get up to 40% off retail price. Everyone gets at least 20% off. Your votes secure your discount.</p>
               </div>
-              
+
               <div className="text-center group">
                 <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-primary to-primary-dark rounded-xl flex items-center justify-center mx-auto mb-4 md:mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
                   <span className="text-xl md:text-2xl font-black text-white">3</span>
@@ -287,10 +286,10 @@ const BuyCoins = () => {
 
       {/* Auth Modal */}
       {showAuthModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-4">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                 {isSignUp ? 'Create Account' : 'Sign In'}
               </h2>
               <button
@@ -300,13 +299,13 @@ const BuyCoins = () => {
                 <X size={24} />
               </button>
             </div>
-            
+
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                 {error}
               </div>
             )}
-            
+
             <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -316,11 +315,11 @@ const BuyCoins = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+                  className="w-full px-3 sm:px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Password
@@ -329,134 +328,139 @@ const BuyCoins = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+                  className="w-full px-3 sm:px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
                   required
                 />
               </div>
-              
+
               <button
                 type="submit"
-                className="w-full btn-primary py-2"
+                className="w-full btn-primary py-3 text-base font-medium transition-colors mt-6"
               >
                 {isSignUp ? 'Create Account' : 'Sign In'}
               </button>
             </form>
-            
+
             <div className="mt-4 text-center">
               <button
                 onClick={() => setIsSignUp(!isSignUp)}
-                className="text-primary hover:text-primary-dark text-sm"
-              >
-                {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+                className="text-primary hover:text-primary-dark text-sm transition-colors"
               </button>
-            </div>
           </div>
         </div>
-      )}
+        </div>
+  )
+}
 
-      {showCoinBuyingCelebrationVideo && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] animate-fade-in">
-          <div className="relative bg-black rounded-2xl overflow-hidden shadow-2xl max-w-md w-full mx-4">
-            <video
-              autoPlay
-              muted
-              className="w-full h-auto rounded-2xl animate-fade-in"
-              onEnded={() => {
-                setShowCoinBuyingCelebrationVideo(false);
-                setShowSuccessModal(true);
-              }}
-            >
-              <source src="https://res.cloudinary.com/digjsdron/video/upload/v1749741996/Coin_Buying_jx2yfz.mp4" type="video/mp4" />
-            </video>
-            
-            <button
-              onClick={() => {
-                setShowCoinBuyingCelebrationVideo(false);
-                setShowSuccessModal(true);
-              }}
-              className="absolute top-4 right-4 w-10 h-10 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-all duration-300 text-xl font-bold"
-            >
-              ×
-            </button>
-            
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-6">
-              <div className="text-center text-white">
-                <h3 className="text-xl font-bold mb-2 animate-fade-in">Coins Purchased! 🎉</h3>
-                <p className="text-sm opacity-90 animate-fade-in">
-                  {purchasedCoins} coin{purchasedCoins > 1 ? 's' : ''} added to your vault • Ready to vote on amazing projects!
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+{
+  showCoinBuyingCelebrationVideo && (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] animate-fade-in">
+      <div className="relative bg-black rounded-2xl overflow-hidden shadow-2xl max-w-md w-full mx-4">
+        <video
+          autoPlay
+          muted
+          className="w-full h-auto rounded-2xl animate-fade-in"
+          onEnded={() => {
+            setShowCoinBuyingCelebrationVideo(false);
+            setShowSuccessModal(true);
+          }}
+        >
+          <source src="https://res.cloudinary.com/digjsdron/video/upload/v1749741996/Coin_Buying_jx2yfz.mp4" type="video/mp4" />
+        </video>
 
-      {/* Success Modal */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl text-center">
-            <div className="mb-6">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-12 h-12 text-green-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Purchase Complete!
-              </h2>
-              <p className="text-gray-600 text-lg">
-                You successfully purchased <span className="font-bold text-primary">{purchasedCoins} coin{purchasedCoins > 1 ? 's' : ''}</span>
-              </p>
-            </div>
-            
-            <div className="bg-gray-50 rounded-xl p-4 mb-6">
-              <div className="flex items-center justify-center space-x-2">
-                <img
-                  src="https://res.cloudinary.com/digjsdron/image/upload/v1749679800/Coin_fro3cf.webp"
-                  alt="Coin"
-                  className="w-8 h-8"
-                  loading="lazy"
-                />
-                <span className="text-lg font-bold text-gray-800">
-                  Your coins are ready to use!
-                </span>
-              </div>
-            </div>
-            
-            <button
-              onClick={handleSuccessClose}
-              className="w-full bg-gradient-to-r from-primary to-primary-dark text-white py-3 rounded-xl font-bold text-lg hover:from-primary-dark hover:to-primary transition-all duration-300 shadow-lg"
-            >
-              Awesome!
-            </button>
-          </div>
-        </div>
-      )}
+        <button
+          onClick={() => {
+            setShowCoinBuyingCelebrationVideo(false);
+            setShowSuccessModal(true);
+          }}
+          className="absolute top-4 right-4 w-10 h-10 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-all duration-300 text-xl font-bold"
+        >
+          ×
+        </button>
 
-      {/* Error Modal */}
-      {showErrorModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl text-center">
-            <div className="mb-6">
-              <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <X className="w-12 h-12 text-red-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Purchase Canceled
-              </h2>
-              <p className="text-gray-600 text-lg">
-                Your purchase was canceled. No charges were made to your account.
-              </p>
-            </div>
-            
-            <button
-              onClick={() => setShowErrorModal(false)}
-              className="w-full bg-gray-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-gray-700 transition-all duration-300 shadow-lg"
-            >
-              Continue Shopping
-            </button>
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-6">
+          <div className="text-center text-white">
+            <h3 className="text-xl font-bold mb-2 animate-fade-in">Coins Purchased! 🎉</h3>
+            <p className="text-sm opacity-90 animate-fade-in">
+              {purchasedCoins} coin{purchasedCoins > 1 ? 's' : ''} added to your vault • Ready to vote on amazing projects!
+            </p>
           </div>
         </div>
-      )}
+      </div>
     </div>
+  )
+}
+
+{/* Success Modal */ }
+{
+  showSuccessModal && (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl text-center">
+        <div className="mb-6">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-12 h-12 text-green-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Purchase Complete!
+          </h2>
+          <p className="text-gray-600 text-lg">
+            You successfully purchased <span className="font-bold text-primary">{purchasedCoins} coin{purchasedCoins > 1 ? 's' : ''}</span>
+          </p>
+        </div>
+
+        <div className="bg-gray-50 rounded-xl p-4 mb-6">
+          <div className="flex items-center justify-center space-x-2">
+            <img
+              src="https://res.cloudinary.com/digjsdron/image/upload/v1749679800/Coin_fro3cf.webp"
+              alt="Coin"
+              className="w-8 h-8"
+              loading="lazy"
+            />
+            <span className="text-lg font-bold text-gray-800">
+              Your coins are ready to use!
+            </span>
+          </div>
+        </div>
+
+        <button
+          onClick={handleSuccessClose}
+          className="w-full bg-gradient-to-r from-primary to-primary-dark text-white py-3 rounded-xl font-bold text-lg hover:from-primary-dark hover:to-primary transition-all duration-300 shadow-lg"
+        >
+          Awesome!
+        </button>
+      </div>
+    </div>
+  )
+}
+
+{/* Error Modal */ }
+{
+  showErrorModal && (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl text-center">
+        <div className="mb-6">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <X className="w-12 h-12 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Purchase Canceled
+          </h2>
+          <p className="text-gray-600 text-lg">
+            Your purchase was canceled. No charges were made to your account.
+          </p>
+        </div>
+
+        <button
+          onClick={() => setShowErrorModal(false)}
+          className="w-full bg-gray-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-gray-700 transition-all duration-300 shadow-lg"
+        >
+          Continue Shopping
+        </button>
+      </div>
+    </div>
+  )
+}
+    </div >
   );
 };
 

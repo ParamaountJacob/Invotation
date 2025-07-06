@@ -1,7 +1,3 @@
-import { useState } from 'react';
-import { Edit, Archive, Eye, TrendingUp, Users, DollarSign, Plus, Rocket, Play, Pause, Upload, X, ExternalLink } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-
 export type Campaign = {
   id: number;
   title: string;
@@ -25,15 +21,6 @@ export type Campaign = {
   }>;
   minimumBid: number;
 };
-
-interface CampaignManagementProps {
-  campaigns: Campaign[];
-  onCampaignEdit: (campaign: Campaign) => void;
-  onCampaignView: (campaignId: number) => void;
-  onCampaignArchive: (campaignId: number) => void;
-  onCampaignCreate?: () => void;
-  onCampaignStatusChange?: (campaignId: number, status: string) => void;
-}
 
 export type Profile = {
   id: string;

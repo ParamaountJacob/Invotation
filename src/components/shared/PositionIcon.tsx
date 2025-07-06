@@ -1,4 +1,4 @@
-import React from 'react';
+import { memo } from 'react';
 import { Trophy, Medal, Award } from 'lucide-react';
 
 interface PositionIconProps {
@@ -20,7 +20,7 @@ const numberSizeClasses = {
     lg: 'w-5 h-5 text-sm',
 } as const;
 
-export const PositionIcon: React.FC<PositionIconProps> = ({
+export const PositionIcon = memo<PositionIconProps>(({
     position,
     size = 'md',
     variant = 'default',
@@ -49,6 +49,8 @@ export const PositionIcon: React.FC<PositionIconProps> = ({
             // Default behavior: return null for positions > 3 (for compatibility)
             return null;
     }
-};
+});
+
+PositionIcon.displayName = 'PositionIcon';
 
 export default PositionIcon;

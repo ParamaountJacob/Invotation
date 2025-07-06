@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 
 interface CompletionPlaqueProps {
@@ -10,14 +9,14 @@ interface CompletionPlaqueProps {
   discount?: number;
 }
 
-const CompletionPlaque: React.FC<CompletionPlaqueProps> = ({ 
-  mode, 
-  percentage = 0, 
+const CompletionPlaque = ({
+  mode,
+  percentage = 0,
   campaignTitle = '',
   position,
   coinsSpent,
   discount
-}) => {
+}: CompletionPlaqueProps) => {
   const getBackgroundColor = () => {
     switch (mode) {
       case 'first':
@@ -46,8 +45,8 @@ const CompletionPlaque: React.FC<CompletionPlaqueProps> = ({
   };
 
   const getRoundedStyle = () => {
-    return mode === 'completed' || mode === 'first' || mode === 'second' || mode === 'third' 
-      ? 'rounded-xl' 
+    return mode === 'completed' || mode === 'first' || mode === 'second' || mode === 'third'
+      ? 'rounded-xl'
       : 'rounded-lg';
   };
 
@@ -68,7 +67,7 @@ const CompletionPlaque: React.FC<CompletionPlaqueProps> = ({
     if (mode === 'first' || mode === 'second' || mode === 'third') {
       const positionText = mode === 'first' ? '1ST' : mode === 'second' ? '2ND' : '3RD';
       const positionNumber = mode === 'first' ? '1' : mode === 'second' ? '2' : '3';
-      
+
       return (
         <motion.div
           className="absolute z-10 text-white font-sans font-extrabold text-2xl tracking-wide flex items-baseline"

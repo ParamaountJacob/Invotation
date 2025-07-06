@@ -19,7 +19,8 @@ import {
   DollarSign,
   TrendingUp,
   Award,
-  PlusCircle
+  PlusCircle,
+  Info
 } from 'lucide-react';
 import MessagingModal from '../components/MessagingModal';
 import UserTransactions from './AdminDashboard/UserTransactions';
@@ -303,13 +304,15 @@ const UserDetail = () => {
                   <div className="flex items-center mt-1">
                     <Coins className="w-4 h-4 mr-2 text-yellow-500" />
                     <span className="text-xl font-bold">{user.coins || 0}</span>
-                    <button
-                      onClick={() => setShowCoinModal(true)}
-                      className="ml-2 text-blue-600 hover:text-blue-800 text-sm flex items-center"
-                    >
-                      <PlusCircle className="w-4 h-4 mr-1" />
-                      Manage Coins
-                    </button>
+                    {isAdmin && currentUser && currentUser.id !== user.id && (
+                      <button
+                        onClick={() => setShowCoinModal(true)}
+                        className="ml-2 text-blue-600 hover:text-blue-800 text-sm flex items-center"
+                      >
+                        <PlusCircle className="w-4 h-4 mr-1" />
+                        Manage Coins
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -325,25 +328,27 @@ const UserDetail = () => {
                   </button>
                 )}
 
-                <button
-                  onClick={handleToggleAdmin}
-                  disabled={user.email === 'invotation@gmail.com' && user.is_admin}
-                  className={`flex items-center px-4 py-2 rounded-lg transition-colors ${user.email === 'invotation@gmail.com' && user.is_admin
+                {isAdmin && currentUser && currentUser.id !== user.id && (
+                  <button
+                    onClick={handleToggleAdmin}
+                    disabled={user.email === 'invotation@gmail.com' && user.is_admin}
+                    className={`flex items-center px-4 py-2 rounded-lg transition-colors ${user.email === 'invotation@gmail.com' && user.is_admin
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       : user.is_admin
                         ? 'bg-red-100 text-red-700 hover:bg-red-200'
                         : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                    }`}
-                  title={user.email === 'invotation@gmail.com' && user.is_admin ? 'Super admin status cannot be removed' : ''}
-                >
-                  <Crown className="w-4 h-4 mr-2" />
-                  {user.email === 'invotation@gmail.com' && user.is_admin
-                    ? 'Super Admin'
-                    : user.is_admin
-                      ? 'Remove Admin'
-                      : 'Make Admin'
-                  }
-                </button>
+                      }`}
+                    title={user.email === 'invotation@gmail.com' && user.is_admin ? 'Super admin status cannot be removed' : ''}
+                  >
+                    <Crown className="w-4 h-4 mr-2" />
+                    {user.email === 'invotation@gmail.com' && user.is_admin
+                      ? 'Super Admin'
+                      : user.is_admin
+                        ? 'Remove Admin'
+                        : 'Make Admin'
+                    }
+                  </button>
+                )}
               </div>
             </div>
 
@@ -398,8 +403,8 @@ const UserDetail = () => {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
                     className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                       }`}
                   >
                     <Icon className="w-4 h-4 mr-2" />
@@ -604,8 +609,8 @@ const UserDetail = () => {
                   <button
                     onClick={() => setCoinOperation('add')}
                     className={`px-4 py-2 rounded-lg font-medium ${coinOperation === 'add'
-                        ? 'bg-green-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                   >
                     Add Coins
@@ -613,8 +618,8 @@ const UserDetail = () => {
                   <button
                     onClick={() => setCoinOperation('subtract')}
                     className={`px-4 py-2 rounded-lg font-medium ${coinOperation === 'subtract'
-                        ? 'bg-red-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                   >
                     Subtract Coins
@@ -649,7 +654,7 @@ const UserDetail = () => {
 
                 <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-800 mb-4">
                   <div className="flex items-start">
-                    <InfoIcon className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+                    <Info className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium">New Balance:</p>
                       <p>
@@ -688,25 +693,5 @@ const UserDetail = () => {
     </div>
   );
 };
-
-// Simple Info Icon component
-const InfoIcon = (props: any) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <circle cx="12" cy="12" r="10"></circle>
-    <line x1="12" y1="16" x2="12" y2="12"></line>
-    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-  </svg>
-);
 
 export default UserDetail;
